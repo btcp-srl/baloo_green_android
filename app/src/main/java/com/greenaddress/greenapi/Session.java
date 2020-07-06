@@ -10,8 +10,8 @@ import com.greenaddress.greenapi.data.NetworkData;
 import com.greenaddress.greenapi.data.SettingsData;
 import com.greenaddress.greenapi.data.SubaccountData;
 import com.greenaddress.greenapi.data.TransactionData;
-import it.baloo.bitcoinpeople.wallet.ui.GaActivity;
-import it.baloo.bitcoinpeople.wallet.wallets.HardwareCodeResolver;
+import it.bitcoinpeople.wallet.ui.GaActivity;
+import it.bitcoinpeople.wallet.wallets.HardwareCodeResolver;
 
 import java.util.ArrayList;
 import java.util.HashMap;

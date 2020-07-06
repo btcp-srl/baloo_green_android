@@ -13,7 +13,7 @@ import com.greenaddress.greenapi.data.EstimatesData;
 import com.greenaddress.greenapi.data.EventData;
 import com.greenaddress.greenapi.data.SettingsData;
 
-import it.baloo.bitcoinpeople.wallet.ui.R;
+import it.bitcoinpeople.wallet.ui.R;
 
 import java.util.ArrayList;
 import java.util.List;

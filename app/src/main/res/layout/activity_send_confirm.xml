@@ -185,7 +185,7 @@
         android:background="@color/white"
         android:padding="16dp">
 
-        <it.baloo.bitcoinpeople.wallet.ui.send.SwipeButton
+        <it.bitcoinpeople.wallet.ui.send.SwipeButton
             android:id="@+id/swipeButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

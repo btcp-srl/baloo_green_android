@@ -160,28 +160,28 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <it.baloo.bitcoinpeople.wallet.ui.send.FeeButtonView
+                <it.bitcoinpeople.wallet.ui.send.FeeButtonView
                     android:id="@+id/fastButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingVertical="4dp"
                     />
 
-                <it.baloo.bitcoinpeople.wallet.ui.send.FeeButtonView
+                <it.bitcoinpeople.wallet.ui.send.FeeButtonView
                     android:id="@+id/mediumButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingVertical="4dp"
                     />
 
-                <it.baloo.bitcoinpeople.wallet.ui.send.FeeButtonView
+                <it.bitcoinpeople.wallet.ui.send.FeeButtonView
                     android:id="@+id/slowButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingVertical="4dp"
                     />
 
-                <it.baloo.bitcoinpeople.wallet.ui.send.FeeButtonView
+                <it.bitcoinpeople.wallet.ui.send.FeeButtonView
                     android:id="@+id/customButton"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

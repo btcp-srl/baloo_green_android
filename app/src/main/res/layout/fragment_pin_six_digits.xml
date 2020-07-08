@@ -9,7 +9,7 @@
               android:paddingRight="@dimen/activity_horizontal_margin"
               android:paddingTop="@dimen/activity_vertical_margin">
 
-    <it.bitcoinpeople.wallet.ui.authentication.PinEntryView
+    <it.baloo.bitcoinpeople.ui.authentication.PinEntryView
         android:id="@+id/pin_entry"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

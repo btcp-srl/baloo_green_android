@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="it.bitcoinpeople.wallet.ui.transactions.MainFragment"
+    tools:context="it.baloo.bitcoinpeople.ui.transactions.MainFragment"
     android:background="@color/windowBackground">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -56,7 +56,7 @@
 
                 </LinearLayout>
 
-                <it.bitcoinpeople.wallet.ui.accounts.AccountView
+                <it.baloo.bitcoinpeople.ui.accounts.AccountView
                     android:id="@+id/accountView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

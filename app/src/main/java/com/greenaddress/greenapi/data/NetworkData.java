@@ -6,8 +6,8 @@ import com.blockstream.libwally.Wally;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import it.bitcoinpeople.wallet.ui.BuildConfig;
-import it.bitcoinpeople.wallet.ui.R;
+import it.baloo.bitcoinpeople.ui.BuildConfig;
+import it.baloo.bitcoinpeople.ui.R;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;

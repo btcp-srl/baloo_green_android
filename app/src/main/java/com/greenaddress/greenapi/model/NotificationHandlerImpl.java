@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.greenaddress.greenapi.data.EstimatesData;
 import com.greenaddress.greenapi.data.EventData;
 import com.greenaddress.greenapi.data.SettingsData;
-import com.greenaddress.greenapi.data.TransactionData;
-import it.bitcoinpeople.wallet.ui.R;
+
+import it.baloo.bitcoinpeople.ui.R;
 
 import java.util.ArrayList;
 import java.util.List;

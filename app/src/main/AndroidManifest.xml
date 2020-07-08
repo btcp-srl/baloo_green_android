@@ -3,7 +3,7 @@
     package="com.greenaddress.greenbits_android_wallet"
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="it.bitcoinpeople.wallet.ui">
+    package="it.baloo.bitcoinpeople.ui">
 
     <supports-screens
         android:anyDensity="true"
@@ -38,7 +38,7 @@
         android:required="false" />
 
     <application
-        android:name="it.bitcoinpeople.wallet.GreenAddressApplication"
+        android:name="it.baloo.bitcoinpeople.GreenAddressApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_btcp_launcher"
         android:label="@string/app_name"
@@ -75,7 +75,7 @@
         </activity>
 
         <service
-            android:name="it.bitcoinpeople.wallet.spv.GaService"
+            android:name="it.baloo.bitcoinpeople.spv.GaService"
             android:enabled="true"
             android:exported="false"
             />
@@ -269,7 +269,7 @@
             android:label="@string/id_sweep"
             />
         <activity
-            android:name="it.bitcoinpeople.wallet.LinksActivity"
+            android:name="it.baloo.bitcoinpeople.LinksActivity"
             android:screenOrientation="portrait">
             <meta-data android:name="useNoActionBar" android:value="true"/>
         </activity>

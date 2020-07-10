@@ -41,7 +41,7 @@ android {
         applicationId 'it.baloo.bitcoinpeople'
         minSdkVersion 19
         targetSdkVersion 29
-        versionCode 337
+        versionCode 338
         // Don't use defaultConfig.getProperty("versionCode") in versionName
         // because it breaks F-Droid!
         versionName "3.3.7.1"

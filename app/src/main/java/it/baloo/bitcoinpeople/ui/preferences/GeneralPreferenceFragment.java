@@ -323,7 +323,7 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
 
         // Privacy policy
         final Preference privacyPolicy = find(PrefKeys.PRIVACY_POLICY);
-        privacyPolicy.setOnPreferenceClickListener(preference -> openURI("https://www.bitcoinpeople.it/privacy"));
+        privacyPolicy.setOnPreferenceClickListener(preference -> openURI("https://www.bitcoinpeople.it/privacy-policy"));
 
         // Version
         final Preference version = find(PrefKeys.VERSION);

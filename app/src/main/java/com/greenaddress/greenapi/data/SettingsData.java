@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SettingsData extends JSONData {
+
     private Integer altimeout;
     private PricingData pricing;
     private NotificationsData notifications;
@@ -19,6 +20,7 @@ public class SettingsData extends JSONData {
     private boolean sound;
     private String unit;
     private String pgp;
+    private Integer csvtime;
 
     public Integer getAltimeout() {
         return altimeout;
@@ -74,6 +76,14 @@ public class SettingsData extends JSONData {
 
     public void setPgp(String pgp) {
         this.pgp = pgp;
+    }
+
+    public Integer getCsvtime() {
+        return csvtime;
+    }
+
+    public void setCsvtime(Integer csvtime) {
+        this.csvtime = csvtime;
     }
 
     @JsonIgnore

@@ -2,10 +2,10 @@ package it.baloo.bitcoinpeople.ui.hardwarewallets;
 
 import android.bluetooth.BluetoothDevice;
 import android.os.ParcelUuid;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import it.baloo.bitcoinpeople.ui.R;
@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ListIterator;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -21,15 +22,15 @@ import androidx.recyclerview.widget.RecyclerView;
 public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.DeviceViewHolder> {
 
     public interface OnAdapterInterface {
-        public void onItemClick(final Pair<ParcelUuid, BluetoothDevice> info);
+        public void onItemClick(final DeviceEntry entry);
     }
 
-    private final List<Pair<ParcelUuid, BluetoothDevice>> mList = new ArrayList<>();
+    private final List<DeviceEntry> mList = new ArrayList<>();
     private OnAdapterInterface mListener;
 
     // Sort by name
-    private static final Comparator<Pair<ParcelUuid, BluetoothDevice>> SORTING_COMPARATOR = (lhs, rhs) ->
-            lhs.second.getName().compareTo(rhs.second.getName());
+    private static final Comparator<DeviceEntry> SORTING_COMPARATOR = (lhs, rhs) ->
+            lhs.device.getName().compareTo(rhs.device.getName());
 
     void setOnAdapterInterface(final OnAdapterInterface listener) {
         this.mListener = listener;
@@ -44,30 +45,50 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.DeviceView
 
     @Override
     public void onBindViewHolder(final DeviceAdapter.DeviceViewHolder holder, final int position) {
-        final Pair<ParcelUuid, BluetoothDevice> info = mList.get(position);
-        holder.text.setText(info.second.getName());
-        holder.itemView.setOnClickListener(view -> mListener.onItemClick(info));
+        final DeviceEntry entry = mList.get(position);
+        holder.text.setText(entry.device.getName());
+        holder.image.setImageResource(entry.imageResource);
+        holder.itemView.setOnClickListener(view -> mListener.onItemClick(entry));
     }
 
-    public void clear() {
+    void clear() {
         mList.clear();
         notifyDataSetChanged();
     }
 
-    public void add(final Pair<ParcelUuid, BluetoothDevice> info) {
-        if (info.first == null || info.second == null || info.second.getName() == null || info.second.getAddress() == null) {
+    void add(final ParcelUuid serviceId, final int imageResource, final BluetoothDevice device, final long ts) {
+        if (serviceId == null || device == null || device.getName() == null || device.getAddress() == null) {
             return;
         }
 
-        // Ignore if already in list
-        if (mList.contains(info)) {
-            return;
+        // If already in list, just update timestamp
+        for (final DeviceEntry entry : mList) {
+            if (entry.device == device) {
+                entry.setTimestamp(ts);
+                return;
+            }
         }
 
-        // Add new device
-        mList.add(info);
+        // If not, add new device
+        mList.add(new DeviceEntry(serviceId, imageResource, device, ts));
         Collections.sort(mList, SORTING_COMPARATOR);
         notifyDataSetChanged();
+    }
+
+    void removeStale(final long tsLimit) {
+        boolean updated = false;
+        final ListIterator<DeviceEntry> iter = mList.listIterator();
+        while(iter.hasNext()){
+            final DeviceEntry entry = iter.next();
+            if(entry.timestamp < tsLimit){
+                updated = true;
+                iter.remove();
+            }
+        }
+
+        if (updated) {
+            notifyDataSetChanged();
+        }
     }
 
     @Override
@@ -75,13 +96,37 @@ public class DeviceAdapter extends RecyclerView.Adapter<DeviceAdapter.DeviceView
         return mList.size();
     }
 
-    public static class DeviceViewHolder extends RecyclerView.ViewHolder {
+    static class DeviceViewHolder extends RecyclerView.ViewHolder {
 
-        protected TextView text;
+        final TextView text;
+        final ImageView image;
 
-        public DeviceViewHolder(final View itemView) {
+        DeviceViewHolder(final View itemView) {
             super(itemView);
             text = itemView.findViewById(R.id.text);
+            image = itemView.findViewById(R.id.icon);
+        }
+    }
+
+    static class DeviceEntry {
+        final ParcelUuid serviceId;
+        final int imageResource;
+        final BluetoothDevice device;
+        private long timestamp;
+
+        DeviceEntry(final ParcelUuid serviceId, final int imageResource, final BluetoothDevice device, final long ts) {
+            this.serviceId = serviceId;
+            this.imageResource = imageResource;
+            this.device = device;
+            this.timestamp = ts;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(final long timestamp) {
+            this.timestamp = timestamp;
         }
     }
 }

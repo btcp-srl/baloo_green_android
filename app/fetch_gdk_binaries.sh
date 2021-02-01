@@ -10,15 +10,15 @@ fi
 # The version of gdk to fetch and its sha256 checksum for integrity checking
 NAME="gdk-android-jni"
 TARBALL="${NAME}.tar.gz"
-URL="https://github.com/Blockstream/gdk/releases/download/release_0.0.36/${TARBALL}"
-SHA256="6aeaa65332c24b433aa1e54eae03449ae0afac27ec75ea5394db47d3be4df323"
+URL="https://github.com/Blockstream/gdk/releases/download/release_0.0.38/${TARBALL}"
+SHA256="0c6cc811840c29af6078a0d716c4c7a8f2fa453ba99b7c22d90d1ebfa44b4314"
 # Pre-requisites
 function check_command() {
     command -v $1 >/dev/null 2>&1 || { echo >&2 "$1 not found, exiting."; exit 1; }
 }
 check_command curl
 check_command gzip
-check_command shasum
+check_command sha256sum
 
 # Find out where we are being run from to get paths right
 OLD_PWD=$(pwd)
@@ -35,7 +35,7 @@ rm -rf gdk-android-jni* ${APP_ROOT}/src/main/jniLibs ${GDK_JAVA_DIR}
 
 # Fetch, validate and decompress gdk
 curl -sL -o ${TARBALL} "${URL}"
-echo "${SHA256}  ${TARBALL}" | shasum -a 256 --check
+echo "${SHA256}  ${TARBALL}" | sha256sum --check
 tar xvf ${TARBALL}
 rm ${TARBALL}
 

@@ -47,6 +47,7 @@ import it.baloo.bitcoinpeople.ui.R.layout;
 import it.baloo.bitcoinpeople.ui.R.string;
 import it.baloo.bitcoinpeople.ui.UI;
 import it.baloo.bitcoinpeople.ui.accounts.SubaccountPopup;
+import it.baloo.bitcoinpeople.ui.components.AmountTextWatcher;
 import it.baloo.bitcoinpeople.wallets.HardwareCodeResolver;
 
 import java.text.NumberFormat;
@@ -75,20 +76,23 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
     private SubaccountData mSubaccountData;
     private boolean isGenerationOnProgress = false;
     private Disposable generateDisposte, validateDisposte;
+    private AmountTextWatcher mAmountTextWatcher;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(layout.activity_receive);
-        UI.preventScreenshots(this);
         setTitleBackTransparent();
 
         mAddressImage = UI.find(this, id.receiveQrImageView);
         mAddressText = UI.find(this, id.receiveAddressText);
-        mAmountText = UI.find(this, id.amountEditText);
-        UI.localeDecimalInput(mAmountText);
         mUnitButton = UI.find(this, id.unitButton);
+
+        mAmountText = UI.find(this, id.amountEditText);
+        mAmountTextWatcher = new AmountTextWatcher(mAmountText);
+        mAmountText.setHint(String.format("0%s00", mAmountTextWatcher.getDefaultSeparator()));
+        mAmountText.addTextChangedListener(mAmountTextWatcher);
 
         mUnitButton.setOnClickListener((final View v) -> {
             onCurrencyClick();
@@ -102,6 +106,7 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
             final String subaccount = getIntent().getStringExtra("SUBACCOUNT");
             mSubaccountData = mObjectMapper.readValue(subaccount, SubaccountData.class);
         } catch (final Exception e) {
+            Toast.makeText(this, string.id_operation_failure, Toast.LENGTH_LONG).show();
             finishOnUiThread();
             return;
         }
@@ -111,8 +116,14 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
         final TextView receivingIdValue = UI.find(this, id.receivingIdValue);
 
         // Show information only for authorized accounts
-        if (mSubaccountData.getType().equals(ACCOUNT_TYPES[AUTHORIZED_ACCOUNT])) {
+        if (mSubaccountData != null && mSubaccountData.getType() != null &&
+            mSubaccountData.getType().equals(ACCOUNT_TYPES[AUTHORIZED_ACCOUNT])) {
             final String receivingID = mSubaccountData.getReceivingId();
+            if (receivingID == null || receivingID.isEmpty()) {
+                Toast.makeText(this, string.id_operation_failure, Toast.LENGTH_LONG).show();
+                finishOnUiThread();
+                return;
+            }
             receivingIdValue.setText(receivingID);
             receivingIdValue.setOnClickListener(
                 v -> onCopyClicked("auth_code", receivingID, string.id_address_copied_to_clipboard));
@@ -123,7 +134,7 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
             UI.find(this, id.receivingIdTitle).setOnClickListener(v -> {
                 final SubaccountPopup s = SubaccountPopup.getInstance(getString(string.id_account_id),
                                                                       getString(
-                                                                          string.id_provide_this_id_to_the_issuer));
+                                                                          string.id_provide_this_id_to_the_asset));
                 final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                 ft.addToBackStack(null);
                 s.show(ft, "dialog");
@@ -178,7 +189,6 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
         // Inflate the menu; this adds items to the action bar if it is present.
         final int id = R.menu.receive_menu;
         getMenuInflater().inflate(id, menu);
-        menu.findItem(R.id.action_generate_new).setIcon(drawable.ic_refresh);
         return true;
     }
 
@@ -302,7 +312,8 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
         final HWDeviceData hwDeviceData = hwWallet.getHWDeviceData();
         if (hwDeviceData != null &&
             hwDeviceData.getDevice().getSupportsLiquid() != HWDeviceDataLiquidSupport.None) {
-            final boolean csv = !mSubaccountData.getType().equals(ACCOUNT_TYPES[AUTHORIZED_ACCOUNT]);
+            final boolean csv = mSubaccountData.getType() != null &&
+                                !mSubaccountData.getType().equals(ACCOUNT_TYPES[AUTHORIZED_ACCOUNT]);
             final String address = hwWallet.getGreenAddress(csv, mSubaccountData.getPointer(), 1L, pointer, 65535L);
             Log.d(TAG, "HWWallet address: " + address);
             return address;
@@ -317,8 +328,9 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
     public void onTextChanged(final CharSequence s, final int start, final int before, final int count) {
         final String key = mIsFiat ? "fiat" : getBitcoinUnitClean();
         try {
-            final NumberFormat us = Conversion.getNumberFormat(8, Locale.US);
-            final Number number = us.parse(mAmountText.getText().toString());
+            final NumberFormat us = Conversion.getNumberFormat(8);
+            final String numberText = mAmountText.getText().toString();
+            final Number number = us.parse(numberText.isEmpty() ? "0" : numberText);
             final String value = String.valueOf(number);
             final ObjectMapper mapper = new ObjectMapper();
             final ObjectNode amount = mapper.createObjectNode();
@@ -338,16 +350,18 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
     public void afterTextChanged(final Editable s) {}
 
     public void onCurrencyClick() {
-        if (mCurrentAmount == null)
-            return;
 
-        try {
-            mIsFiat = !mIsFiat;
-            setAmountText(mAmountText, mIsFiat, mCurrentAmount);
-        } catch (final ParseException e) {
-            mIsFiat = !mIsFiat;
-            UI.popup(this, R.string.id_your_favourite_exchange_rate_is).show();
-            return;
+        mIsFiat = !mIsFiat;
+        if (mCurrentAmount != null) {
+            try {
+                mAmountText.removeTextChangedListener(mAmountTextWatcher);
+                setAmountText(mAmountText, mIsFiat, mCurrentAmount);
+                mAmountText.addTextChangedListener(mAmountTextWatcher);
+            } catch( final ParseException e) {
+                mIsFiat = !mIsFiat;
+                UI.popup(this, R.string.id_your_favourite_exchange_rate_is).show();
+                return;
+            }
         }
 
         // Toggle unit display and selected state

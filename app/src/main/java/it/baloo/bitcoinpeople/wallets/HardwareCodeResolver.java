@@ -75,8 +75,8 @@ public class HardwareCodeResolver implements CodeResolver {
 
                 data.setAssetCommitments(result.getAssetCommitments());
                 data.setValueCommitments(result.getValueCommitments());
-                data.setAbfs(result.getAbfs());
-                data.setVbfs(result.getVbfs());
+                data.setAssetblinders(result.getAssetBlinders());
+                data.setAmountblinders(result.getAmountBlinders());
             } else {
                 derHexSigs = hwWallet.signTransaction(parent, requiredData.getTransaction(),
                                                       requiredData.getSigningInputs(),
@@ -139,6 +139,8 @@ public class HardwareCodeResolver implements CodeResolver {
         return future;
     }
 
+    @Override
+    public void dismiss() { }
 
     @Override
     public SettableFuture<String> code(String method) {

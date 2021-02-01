@@ -143,18 +143,27 @@ public class BTChipDongle implements BTChipConstants {
 	}
 
 	public class BTChipFirmware {
+
+		private int features;
+		private int architecture;
 		private int major;
 		private int minor;
 		private int patch;
-		private boolean compressedKeys;
 
-		public BTChipFirmware(int major, int minor, int patch, boolean compressedKeys) {
+		public BTChipFirmware(int features, int architecture, int major, int minor, int patch) {
+			this.features = features;
+			this.architecture = architecture;
 			this.major = major;
 			this.minor = minor;
 			this.patch = patch;
-			this.compressedKeys = compressedKeys;
 		}
 
+		public int getFeatures() {
+			return features;
+		}
+		public int getArchitecture() {
+			return architecture;
+		}
 		public int getMajor() {
 			return major;
 		}
@@ -164,13 +173,14 @@ public class BTChipDongle implements BTChipConstants {
 		public int getPatch() {
 			return patch;
 		}
-		public boolean isCompressedKey() {
-			return compressedKeys;
+
+		public boolean compressedKeys() {
+			return (features & 0x1) == 0x1;
 		}
 
 		@Override
 		public String toString() {
-			return String.format("%s.%s.%s compressed keys %b", major, minor, patch, compressedKeys);
+			return String.format("%s.%s.%s  (architecture 0x%x, features 0x%x)", major, minor, patch, architecture, features);
 		}
 	}
 
@@ -259,14 +269,6 @@ public class BTChipDongle implements BTChipConstants {
 
 		public byte[] getDataForFinalize() {
 			return Arrays.copyOfRange(value, 64, 207);
-		}
-
-		public byte[] getAbf() {
-			return Arrays.copyOfRange(value, 0, 32);
-		}
-
-		public byte[] getVbf() {
-			return Arrays.copyOfRange(value, 32, 64);
 		}
 
 		public byte[] getAssetCommitment() {
@@ -447,6 +449,12 @@ public class BTChipDongle implements BTChipConstants {
 	}
 
 	private byte[] exchangeApduSplit2(byte cla, byte ins, byte p1, byte p2, byte[] data, byte[] data2, int acceptedSW[]) throws BTChipException {
+		// If data is empty, just send data2 immediately
+		if (data.length == 0) {
+			return exchangeApdu(cla, ins, p1, p2, data2, acceptedSW);
+		}
+
+		// Send data potentially in chunks, appending data2 to the last one
 		int offset = 0;
 		byte[] result = null;
 		int maxBlockSize = 255 - data2.length;
@@ -519,7 +527,22 @@ public class BTChipDongle implements BTChipConstants {
 		return new BTChipPublicKey(nonce, null, null);
 	}
 
-	public BTChipInput getTrustedInput(BitcoinTransaction transaction, long index, long sequence) throws BTChipException {
+	public boolean shouldUseTrustedInputForSegwit() throws BTChipException {
+		if (this.firmwareVersion == null) {
+			this.getFirmwareVersion();
+		}
+
+		// Only applies to Nano S/X
+		if (this.firmwareVersion.getArchitecture() != BTCHIP_ARCH_NANO_SX) {
+		    return false;
+		}
+
+		// True for ver >= 1.4.0
+		return this.firmwareVersion.getMajor() > 1 ||
+			(this.firmwareVersion.getMajor() == 1 && this.firmwareVersion.getMinor() >= 4);
+	}
+
+	public BTChipInput getTrustedInput(BitcoinTransaction transaction, long index, long sequence, boolean segwit) throws BTChipException {
 		ByteArrayOutputStream data = new ByteArrayOutputStream();
 		// Header
 		BufferUtils.writeUint32BE(data, index);
@@ -554,7 +577,7 @@ public class BTChipDongle implements BTChipConstants {
 		byte[] response = exchangeApdu(BTCHIP_CLA, BTCHIP_INS_GET_TRUSTED_INPUT, (byte)0x80, (byte)0x00, transaction.getLockTime(), OK);
 		ByteArrayOutputStream sequenceBuf = new ByteArrayOutputStream();
 		BufferUtils.writeUint32LE(sequenceBuf, sequence);
-		return new BTChipInput(response, sequenceBuf.toByteArray(), true, false);
+		return new BTChipInput(response, sequenceBuf.toByteArray(), true, segwit);
 	}
 
 	public BTChipInput createInput(byte[] value, byte[] sequence, boolean trusted, boolean segwit) {
@@ -576,7 +599,7 @@ public class BTChipDongle implements BTChipConstants {
 		for (BTChipInput input : usedInputList) {
 			byte[] script = (currentIndex == inputIndex ? redeemScript : new byte[0]);
 			data = new ByteArrayOutputStream();
-			data.write(input.isSegwit() ? (byte)0x02 : input.isTrusted() ? (byte)0x01 : (byte)0x00);
+			data.write(input.isTrusted() ? (byte)0x01 : input.isSegwit() ? (byte)0x02 : (byte)0x00);
 			if (input.isTrusted()) {
 				// other inputs have constant length
 				data.write(input.getValue().length);
@@ -634,7 +657,7 @@ public class BTChipDongle implements BTChipConstants {
 		exchangeApdu(BTCHIP_CLA, BTCHIP_INS_GET_LIQUID_ISSUANCE_INFORMATION, (byte)0x80, (byte)0x00, data.toByteArray(), OK);
 	}
 
-	public List<BTChipLiquidTrustedCommitments> getLiquidCommitments(List<Long> values, List<byte[]> abfs, List<byte[]> vbfs, final long numInputs, List<InputOutputData> outputData) throws BTChipException {
+	public List<BTChipLiquidTrustedCommitments> getLiquidCommitments(List<Long> values, List<byte[]> assetBlindersBytes, List<byte[]> amountBlindersBytes, final long numInputs, List<InputOutputData> outputData) throws BTChipException {
 		ByteArrayOutputStream data;
 		List<BTChipLiquidTrustedCommitments> out = new ArrayList<>();
 
@@ -660,24 +683,24 @@ public class BTChipDongle implements BTChipConstants {
 			BufferUtils.writeUint32BE(data, i);
 
 			if (last) {
-				// get only the abf
-				ByteArrayOutputStream getAbfData = new ByteArrayOutputStream(4);
-				BufferUtils.writeUint32BE(getAbfData, i);
-				byte abfResponse[] = exchangeApdu(BTCHIP_CLA, BTCHIP_INS_GET_LIQUID_BLINDING_FACTOR, (byte)0x01, (byte)0x00, getAbfData.toByteArray(), OK);
-				abfs.add(Arrays.copyOfRange(abfResponse, 0, 32));
+				// get only the asset blinder
+				ByteArrayOutputStream getAssetBlinderData = new ByteArrayOutputStream(4);
+				BufferUtils.writeUint32BE(getAssetBlinderData, i);
+				byte assetBlinderResponse[] = exchangeApdu(BTCHIP_CLA, BTCHIP_INS_GET_LIQUID_BLINDING_FACTOR, (byte)0x01, (byte)0x00, getAssetBlinderData.toByteArray(), OK);
+				assetBlindersBytes.add(Arrays.copyOfRange(assetBlinderResponse, 0, 32));
 
-				// generate the last vbf based on the others
-				byte finalVbf[] = Wally.asset_final_vbf(Longs.toArray(values), numInputs, foldListOfByteArray(abfs), foldListOfByteArray(vbfs));
-				vbfs.add(finalVbf);
-				data.write(finalVbf, 0, 32);
+				// generate the last amount blinder based on the others
+				byte finalAmountBlinder[] = Wally.asset_final_vbf(Longs.toArray(values), numInputs, foldListOfByteArray(assetBlindersBytes), foldListOfByteArray(amountBlindersBytes));
+				amountBlindersBytes.add(finalAmountBlinder);
+				data.write(finalAmountBlinder, 0, 32);
 			}
 
 			byte response[] = exchangeApdu(BTCHIP_CLA, BTCHIP_INS_GET_LIQUID_COMMITMENTS, last ? (byte)0x02 : (byte)0x01, (byte)0x00, data.toByteArray(), OK);
 			out.add(new BTChipLiquidTrustedCommitments(response));
 
 			if (!last) {
-				abfs.add(Arrays.copyOfRange(response, 0, 32));
-				vbfs.add(Arrays.copyOfRange(response, 32, 64));
+				assetBlindersBytes.add(Arrays.copyOfRange(response, 0, 32));
+				amountBlindersBytes.add(Arrays.copyOfRange(response, 32, 64));
 			}
 
 			i++;
@@ -891,20 +914,24 @@ public class BTChipDongle implements BTChipConstants {
 		return untrustedHashSign(privateKeyPath, pin, 0, (byte)0x01);
 	}
 
-	public boolean shouldUseNewSigningApi() {
-		try {
-			if (this.firmwareVersion == null) this.getFirmwareVersion();
-		} catch (BTChipException e) {
-			return false;
+	public boolean shouldUseNewSigningApi() throws BTChipException {
+		if (this.firmwareVersion == null) {
+			this.getFirmwareVersion();
 		}
-		if (this.firmwareVersion.getMajor() > 0x2001) { // 0x2001 = Ledger 1.x, 0x3001 = Nano S
+
+		// True for Nano S/X
+		if (this.firmwareVersion.getArchitecture() == BTCHIP_ARCH_NANO_SX) {
 			return true;
-		} else if (this.firmwareVersion.getMajor() == 0x2001 &&
-				this.firmwareVersion.getMinor() > 0) {
-			return true;
-		} else return this.firmwareVersion.getMajor() == 0x2001 &&
-                this.firmwareVersion.getMinor() == 0 &&
-                this.firmwareVersion.getPatch() >= 2;
+		}
+
+		// True for ver >= 1.1.2 on ledger 1.x
+		if (this.firmwareVersion.getArchitecture() == BTCHIP_ARCH_LEDGER_1) {
+			return this.firmwareVersion.getMajor() > 1 ||
+				(this.firmwareVersion.getMajor() == 1 && this.firmwareVersion.getMinor() > 1) ||
+				(this.firmwareVersion.getMajor() == 1 && this.firmwareVersion.getMinor() == 1 && this.firmwareVersion.getPatch() >= 2);
+		}
+
+		return false;
 	}
 
 	public boolean signMessagePrepare(final List<Integer> path, byte[] message) throws BTChipException {
@@ -939,12 +966,14 @@ public class BTChipDongle implements BTChipConstants {
 
 	public BTChipFirmware getFirmwareVersion() throws BTChipException {
 		byte[] response = exchangeApdu(BTCHIP_CLA, BTCHIP_INS_GET_FIRMWARE_VERSION, (byte)0x00, (byte)0x00, 0x00, OK);
-		boolean compressedKeys = (response[0] == (byte)0x01);
 
-		int major = ((response[1] & 0xff) << 8) | response[2] & 0xff;
+		int features = response[0] & 0xff;
+		int architecture = response[1] & 0xff;
+		int major = response[2] & 0xff;
 		int minor = response[3] & 0xff;
 		int patch = response[4] & 0xff;
-		this.firmwareVersion = new BTChipFirmware(major, minor, patch, compressedKeys);
+		this.firmwareVersion = new BTChipFirmware(features, architecture, major, minor, patch);
+
 		return this.firmwareVersion;
 	}
 

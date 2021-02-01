@@ -149,7 +149,8 @@
                     android:background="@android:color/transparent"
                     android:drawableStart="@drawable/ic_btcp_send"
                     android:textColor="@color/white"
-                    android:text="@string/id_send"/>
+                    android:text="@string/id_send"
+                    app:tint="?attr/drawableSendReceiveIcColor"/>
 
                 <Space
                     android:layout_width="wrap_content"
@@ -184,7 +185,8 @@
                     android:background="@android:color/transparent"
                     android:drawableStart="@drawable/ic_btcp_receive"
                     android:textColor="@color/white"
-                    android:text="@string/id_receive"/>
+                    android:text="@string/id_receive"
+                    app:tint="?attr/drawableSendReceiveIcColor"/>
 
                 <Space
                     android:layout_width="wrap_content"
@@ -223,6 +225,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:src="@drawable/ic_add_wallet_1"
+            app:tint="@color/accent"
             />
 
         <Space

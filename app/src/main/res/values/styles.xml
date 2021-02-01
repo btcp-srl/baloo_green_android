@@ -138,6 +138,7 @@
         <item name="preferenceCategoryStyle">@style/FixForPreferenceCategoryStyle</item>
         <item name="android:textColor">@color/textColor</item>
         <item name="textColor">@color/textColor</item>
+        <item name="android:tint">?attr/colorAccent</item>
     </style>
 
     <style name="FixForPreferenceCategoryStyle" parent="@style/Preference.Category.Material">

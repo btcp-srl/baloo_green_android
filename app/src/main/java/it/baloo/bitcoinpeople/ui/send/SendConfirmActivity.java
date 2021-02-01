@@ -52,17 +52,22 @@ public class SendConfirmActivity extends LoggedActivity implements SwipeButton.O
     private Disposable setupDisposable;
     private Disposable sendDisposable;
 
+    private PopupMethodResolver popupMethodResolver;
+    private PopupCodeResolver popupCodeResolver;
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send_confirm);
-        UI.preventScreenshots(this);
         setTitleBackTransparent();
         mSwipeButton = UI.find(this, R.id.swipeButton);
 
         mObjectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         final boolean isSweep = getIntent().getBooleanExtra(PrefKeys.SWEEP, false);
         final String hwwJson = getIntent().getStringExtra("hww");
+
+        popupMethodResolver = new PopupMethodResolver(this);
+        popupCodeResolver = new PopupCodeResolver(this);
 
         setTitle(isSweep ? R.string.id_sweep : R.string.id_send);
 
@@ -102,29 +107,28 @@ public class SendConfirmActivity extends LoggedActivity implements SwipeButton.O
         final TextView noteText = UI.find(this, R.id.noteText);
         final TextView addressText = UI.find(this, R.id.addressText);
 
-        final JsonNode address = mTxJson.withArray("addressees").get(0);
-        final String currentRecipient = address.get("address").asText();
+        // Use only 1st addressee
+        final JsonNode addressee = mTxJson.withArray("addressees").get(0);
+        final String tag = addressee.has("asset_tag") ? addressee.get("asset_tag").asText() : "btc";
+        final String address = addressee.get("address").asText();
+        final long amount = mTxJson.get("satoshi").get(tag).asLong(0);
         final boolean isSweeping = mTxJson.get("is_sweep").asBoolean();
-        final Integer subaccount = mTxJson.get("subaccount").asInt();
         UI.hideIf(isSweeping, noteTextTitle);
         UI.hideIf(isSweeping, noteText);
 
-        addressText.setText(currentRecipient);
+        addressText.setText(address);
         noteText.setText(mTxJson.get("memo") == null ? "" : mTxJson.get("memo").asText());
         CharInputFilter.setIfNecessary(noteText);
 
         // Set currency & amount
-        final long amount = mTxJson.get("satoshi").asLong();
         final long fee = mTxJson.get("fee").asLong();
         final TextView sendAmount = UI.find(this, R.id.sendAmount);
         final TextView sendFee = UI.find(this, R.id.sendFee);
-        final JsonNode assetTag = address.get("asset_tag");
         if (getSession().getNetworkData().getLiquid()) {
             sendAmount.setVisibility(View.GONE);
             UI.find(this, R.id.amountWordSending).setVisibility(View.GONE);
-            final String asset = assetTag.asText();
             final Map<String, Long> balances = new HashMap<>();
-            balances.put(asset, address.get("satoshi").asLong());
+            balances.put(tag, amount);
             final RecyclerView assetsList = findViewById(R.id.assetsList);
             assetsList.setLayoutManager(new LinearLayoutManager(this));
             final AssetsAdapter adapter = new AssetsAdapter(balances, getNetwork(), null);
@@ -168,6 +172,10 @@ public class SendConfirmActivity extends LoggedActivity implements SwipeButton.O
             setupDisposable.dispose();
         if (sendDisposable != null)
             sendDisposable.dispose();
+        if (popupMethodResolver != null)
+            popupMethodResolver.dismiss();
+        if (popupCodeResolver != null)
+            popupCodeResolver.dismiss();
     }
 
     @Override
@@ -190,8 +198,7 @@ public class SendConfirmActivity extends LoggedActivity implements SwipeButton.O
             if (isSweep) {
                 getSession().broadcastTransactionRaw(tx.get("transaction").asText());
             } else {
-                getSession().sendTransactionRaw(activity, tx).resolve(new PopupMethodResolver(activity),
-                                                                      new PopupCodeResolver(activity));
+                getSession().sendTransactionRaw(activity, tx).resolve(popupMethodResolver, popupCodeResolver);
             }
             return tx;
         })

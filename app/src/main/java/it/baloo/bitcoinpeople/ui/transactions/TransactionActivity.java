@@ -17,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Observable;
@@ -54,7 +55,7 @@ import static com.greenaddress.greenapi.Registry.getRegistry;
 import static com.greenaddress.greenapi.Session.getSession;
 
 public class TransactionActivity extends LoggedActivity implements View.OnClickListener,
-    AssetsAdapter.OnAssetSelected  {
+                                         AssetsAdapter.OnAssetSelected  {
 
     private static final String TAG = TransactionActivity.class.getSimpleName();
 
@@ -64,7 +65,6 @@ public class TransactionActivity extends LoggedActivity implements View.OnClickL
     private TextView mUnconfirmedText;
     private TextView mStatusIncreaseFee;
     private TextView mStatusSPVUnverified;
-    private Button mExplorerButton;
     private Dialog mSummary;
     private Dialog mTwoFactor;
     private ImageView mStatusIcon;
@@ -84,14 +84,12 @@ public class TransactionActivity extends LoggedActivity implements View.OnClickL
         super.onCreate(savedInstanceState);
 
         setResult(RESULT_OK);
-        UI.preventScreenshots(this);
 
         setTitleBackTransparent();
 
         mMemoTitle = UI.find(this, R.id.txMemoTitle);
         mMemoSave = UI.find(this, R.id.txMemoSave);
         mMemoText = UI.find(this, R.id.txMemoText);
-        mExplorerButton = UI.find(this, R.id.txExplorer);
         mUnconfirmedText = UI.find(this, R.id.txUnconfirmedText);
         mStatusIncreaseFee = UI.find(this, R.id.status_increase_fee);
         mStatusSPVUnverified = UI.find(this, R.id.status_spv_unverified);
@@ -115,10 +113,6 @@ public class TransactionActivity extends LoggedActivity implements View.OnClickL
         // Set txid
         final TextView hashText = UI.find(this, R.id.txHashText);
         hashText.setText(mTxItem.getTxhash());
-
-        // Set explorer button
-        final String blockExplorerTx = mNetworkData.getTxExplorerUrl();
-        openInBrowser(mExplorerButton, mTxItem.getTxhash(), blockExplorerTx, null);
 
         // Set title: incoming, outgoing, redeposited
         final String title;
@@ -313,11 +307,8 @@ public class TransactionActivity extends LoggedActivity implements View.OnClickL
     public boolean onOptionsItemSelected(final MenuItem item) {
         switch (item.getItemId()) {
         case R.id.action_share:
-            final Intent sendIntent = new Intent(Intent.ACTION_SEND);
-            sendIntent.putExtra(Intent.EXTRA_TEXT,
-                                mNetworkData.getTxExplorerUrl() + mTxItem.getTxhash());
-            sendIntent.setType("text/plain");
-            startActivity(sendIntent);
+            final FragmentTransaction ft = getSupportFragmentManager().beginTransaction().addToBackStack(null);
+            TransactionSharingFrament.createTransactionSharingFrament(getNetwork(), mTxItem).show(ft, "");
             return true;
         case android.R.id.home:
             finish();

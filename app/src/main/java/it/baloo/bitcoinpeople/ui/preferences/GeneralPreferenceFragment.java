@@ -40,6 +40,7 @@ import it.baloo.bitcoinpeople.AuthenticationHandler;
 import it.baloo.bitcoinpeople.ui.BuildConfig;
 import it.baloo.bitcoinpeople.ui.R;
 import it.baloo.bitcoinpeople.ui.UI;
+import it.baloo.bitcoinpeople.ui.components.AmountTextWatcher;
 import it.baloo.bitcoinpeople.ui.onboarding.SecurityActivity;
 import it.baloo.bitcoinpeople.ui.twofactor.PopupCodeResolver;
 import it.baloo.bitcoinpeople.ui.twofactor.PopupMethodResolver;
@@ -211,7 +212,8 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
         mLimitsPref = find(PrefKeys.TWO_FAC_LIMITS);
         mLimitsPref.setOnPreferenceClickListener(this::onLimitsPreferenceClicked);
         mLimitsPref.setVisible(anyEnabled && !isLiquid);
-        setLimitsText(twoFaData.getLimits());
+        if (twoFaData != null)
+            setLimitsText(twoFaData.getLimits());
 
         // Enable nlocktime recovery emails
         mLocktimePref = find(PrefKeys.TWO_FAC_N_LOCKTIME_EMAILS);
@@ -486,12 +488,12 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
         }
         final View v = UI.inflateDialog(getActivity(), R.layout.dialog_set_custom_feerate);
         final EditText rateEdit = UI.find(v, R.id.set_custom_feerate_amount);
-        UI.localeDecimalInput(rateEdit);
-
+        final AmountTextWatcher amountTextWatcher = new AmountTextWatcher(rateEdit);
         final Double aDouble = Double.valueOf(getDefaultFeeRate());
-
+        rateEdit.setHint(String.format("0%s00", amountTextWatcher.getDefaultSeparator()));
         rateEdit.setText(Conversion.getNumberFormat(2).format(aDouble));
         rateEdit.selectAll();
+        rateEdit.addTextChangedListener(amountTextWatcher);
 
         final MaterialDialog dialog;
         dialog = UI.popup(getActivity(), R.string.id_set_custom_fee_rate)
@@ -682,7 +684,10 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
         final View v = UI.inflateDialog(getActivity(), R.layout.dialog_set_limits);
         final Spinner unitSpinner = UI.find(v, R.id.set_limits_currency);
         final EditText amountEdit = UI.find(v, R.id.set_limits_amount);
-        UI.localeDecimalInput(amountEdit);
+
+        final AmountTextWatcher amountTextWatcher = new AmountTextWatcher(amountEdit);
+        amountEdit.setHint(String.format("0%s00", amountTextWatcher.getDefaultSeparator()));
+        amountEdit.addTextChangedListener(amountTextWatcher);
 
         final String[] currencies;
         currencies = new String[] {Conversion.getBitcoinOrLiquidUnit(), Conversion.getFiatCurrency()};
@@ -699,11 +704,10 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
             amountEdit.selectAll();
             final BalanceData balance;
             balance = mObjectMapper.treeToValue(limitsData, BalanceData.class);
-            if (isFiat) {
-                amountEdit.setText(Conversion.getFiat(balance, false));
-            } else {
-                amountEdit.setText(Conversion.getBtc(balance, false));
-            }
+            amountEdit.removeTextChangedListener(amountTextWatcher);
+            amountEdit.setText(isFiat ? Conversion.getFiat(balance, false) :
+                        Conversion.getBtc(balance, false));
+            amountEdit.addTextChangedListener(amountTextWatcher);
         } catch (final Exception e) {
             Log.e(TAG, "Conversion error: " + e.getLocalizedMessage());
         }

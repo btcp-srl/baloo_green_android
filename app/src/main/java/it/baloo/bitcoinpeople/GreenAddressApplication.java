@@ -153,7 +153,7 @@ public class GreenAddressApplication extends MultiDexApplication {
                 return n;
             }
         }
-        return null;
+        return networks.get(0);
     }
 
     public void setCurrentNetwork(final String networkId) {

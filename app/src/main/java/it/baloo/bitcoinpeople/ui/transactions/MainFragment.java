@@ -173,6 +173,10 @@ public class MainFragment extends GAFragment implements View.OnClickListener, Li
                           .subscribe((blockHeight) -> {
             mTransactionsAdapter.setCurrentBlock(blockHeight);
             mTransactionsAdapter.notifyDataSetChanged();
+
+            // check for pending/uncofirmed txs
+            if (hasMempoolTxs())
+                updateTransactions(true);
         });
 
         // on new transaction received
@@ -210,7 +214,11 @@ public class MainFragment extends GAFragment implements View.OnClickListener, Li
         subaccountDisposable = Observable.just(getSession())
                                .observeOn(Schedulers.computation())
                                .map((session) -> {
-            return getSession().getSubAccount(getGaActivity(), mActiveAccount);
+            try {
+                return session.getSubAccount(getGaActivity(), mActiveAccount);
+            } catch (final Exception e) {
+                return session.getSubAccount(getGaActivity(), 0);
+            }
         })
                                .observeOn(AndroidSchedulers.mainThread())
                                .subscribe((subaccount) -> {
@@ -228,6 +236,14 @@ public class MainFragment extends GAFragment implements View.OnClickListener, Li
         }, (final Throwable e) -> {
             Log.d(TAG, e.getLocalizedMessage());
         });
+    }
+
+    private boolean hasMempoolTxs() {
+        for (final TransactionData tx : mTxItems) {
+            if (tx.getBlockHeight() == 0)
+                return true;
+        }
+        return false;
     }
 
     private void updateTransactions(final boolean clean) {
@@ -315,11 +331,11 @@ public class MainFragment extends GAFragment implements View.OnClickListener, Li
 
     @Override
     public void onClick(final View view) {
+        final ObjectMapper mObjectMapper = new ObjectMapper();
         view.setEnabled(false);
         if (view.getId() == R.id.receiveButton) {
             view.setEnabled(true);
             final Intent intent = new Intent(getActivity(), ReceiveActivity.class);
-            final ObjectMapper mObjectMapper = new ObjectMapper();
             try {
                 final String text = mObjectMapper.writeValueAsString(mSubaccount);
                 intent.putExtra("SUBACCOUNT", text);
@@ -329,19 +345,27 @@ public class MainFragment extends GAFragment implements View.OnClickListener, Li
             }
         } else if (view.getId() == R.id.sendButton) {
             view.setEnabled(true);
-            if (getNetwork().getLiquid() && (getBalance() != null && getBalance().get("btc") == 0L)) {
+            if (getBalance() == null || getBalance().get("btc") == null)
+                return;
+            if (getNetwork().getLiquid() && getBalance().get("btc") == 0L) {
                 UI.popup(getGaActivity(), R.string.id_warning, R.string.id_receive, R.string.id_cancel)
                 .content(R.string.id_insufficient_lbtc_to_send_a)
                 .onPositive((dialog, which) -> {
-                    final Intent intent = new Intent(getActivity(), ReceiveActivity.class);
-                    getActivity().startActivity(intent);
+                    try {
+                        final Intent intent = new Intent(getActivity(), ReceiveActivity.class);
+                        final String text = mObjectMapper.writeValueAsString(mSubaccount);
+                        intent.putExtra("SUBACCOUNT", text);
+                        getActivity().startActivity(intent);
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
                 })
                 .build().show();
-            } else {
-                final Intent intent = new Intent(getActivity(), ScanActivity.class);
-                intent.putExtra(PrefKeys.SWEEP, getSession().isWatchOnly());
-                startActivity(intent);
+                return;
             }
+            final Intent intent = new Intent(getActivity(), ScanActivity.class);
+            intent.putExtra(PrefKeys.SWEEP, getSession().isWatchOnly());
+            startActivity(intent);
         } else if (view.getId() == R.id.selectSubaccount) {
             view.setEnabled(true);
             final Intent intent = new Intent(getActivity(), SubaccountSelectActivity.class);

@@ -14,11 +14,12 @@ import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.RegTestParams;
 import org.bitcoinj.params.TestNet3Params;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-public class NetworkData extends JSONData implements Comparable<NetworkData> {
+public class NetworkData extends JSONData implements Comparable<NetworkData>, Serializable {
     private String addressExplorerUrl;
     private String txExplorerUrl;
     private String bech32Prefix;
@@ -40,6 +41,7 @@ public class NetworkData extends JSONData implements Comparable<NetworkData> {
     private Integer ctBits;
     private Integer ctExponent;
     private String policyAsset;
+    private String serverType;
 
     @JsonIgnore
     public NetworkParameters getNetworkParameters() {
@@ -114,6 +116,9 @@ public class NetworkData extends JSONData implements Comparable<NetworkData> {
             return R.drawable.ic_liquid;
         return R.drawable.ic_testnet_btc;
     }
+
+    @JsonIgnore
+    public boolean isElectrum() { return "electrum".equals(getServerType()); }
 
     public String getPolicyAsset() {
         return policyAsset;
@@ -281,6 +286,14 @@ public class NetworkData extends JSONData implements Comparable<NetworkData> {
 
     public void setDefaultPeers(final List<String> defaultPeers) {
         this.defaultPeers = defaultPeers;
+    }
+
+    public String getServerType() {
+        return serverType;
+    }
+
+    public void setServerType(final String serverType) {
+        this.serverType = serverType;
     }
 
     @Override

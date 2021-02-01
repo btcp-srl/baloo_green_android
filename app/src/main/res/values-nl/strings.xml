@@ -21,6 +21,7 @@
   <string name="id_account_id">Account ID</string>
   <string name="id_account_name">Account Name</string>
   <string name="id_account_type">Account Type</string>
+  <string name="id_accounts_summary">Accounts summary</string>
   <string name="id_action_canceled">Actie geannuleerd</string>
   <string name="id_add_a_note_only_you_can_see_it">Add a note (only you can see it).</string>
   <string name="id_add_a_pgp_public_key_to_receive">Add a PGP public key to receive encrypted email and keep your privacy</string>
@@ -51,6 +52,7 @@
   <string name="id_autolock_after">Auto-vergrendeling na</string>
   <string name="id_back">Back</string>
   <string name="id_backup_the_recovery_mnemonic">Backup the recovery mnemonic and recovery xpub to recover funds from your 2of3 account.</string>
+  <string name="id_backup_your_mnemonic_before">Backup your mnemonic before removing the wallet from this device.</string>
   <string name="id_be_aware_other_apps_can_read_or">Pas op: andere apps kunnen je klembord uitlezen of veranderen</string>
   <string name="id_bitcoin_denomination">Bitcoin-waardevertoning</string>
   <string name="id_bitcoin_wallet">Bitcoin-wallet</string>
@@ -70,6 +72,7 @@
   <string name="id_cannot_remove_enabled_network">Het ingeschakelde netwerk moet eerst worden uitgeschakeld voor het kan worden verwijderd</string>
   <string name="id_cant_connect_to_this_url">Kan geen verbinding maken met URL</string>
   <string name="id_change">VERANDEREN</string>
+  <string name="id_change_address">Change address</string>
   <string name="id_change_pin">Change PIN</string>
   <string name="id_check_your_backup">Check your backup</string>
   <string name="id_choose">Kiezen</string>
@@ -78,18 +81,23 @@
   <string name="id_choose_twofactor_authentication">Kies methode tweetrapsauthenticatie</string>
   <string name="id_choose_your_network">Kies je netwerk</string>
   <string name="id_clear">WISSEN</string>
+  <string name="id_click_to_copy">Click to copy</string>
   <string name="id_click_to_receive_an_email_with">Click to receive an email with your encrypted recovery data.</string>
   <string name="id_communication_timed_out_make">Communication timed out. Make sure the device is powered on and try again.</string>
   <string name="id_completed">Voltooid</string>
   <string name="id_confidential">Confidential</string>
+  <string name="id_confirm_action">Confirm action</string>
+  <string name="id_confirm_by_typing_the_wallet">Confirm by typing the wallet name</string>
   <string name="id_confirm_code">Bevestig code</string>
   <string name="id_confirm_passphrase">Bevestig passphrase</string>
+  <string name="id_confirm_transaction">Confirm transaction</string>
   <string name="id_confirm_transaction_details_on">Confirm transaction details on your harware wallet</string>
   <string name="id_confirmation_in_d_blocks">Bevestigd in %d blocks</string>
   <string name="id_congratulations">Gefeliciteerd!</string>
   <string name="id_connect_hardware_wallet">Connect hardware wallet</string>
   <string name="id_connect_through_a_proxy">Via proxy verbinden</string>
   <string name="id_connect_with_tor">Met Tor verbinden</string>
+  <string name="id_connect_your_ledger_to_use_it">Connect your Ledger to use it in Green</string>
   <string name="id_connecting_to_a_trusted_node">Om met een vertrouwde node via Tor te verbinden, moet je eerst de proxyinstellingen in de app en een Socks5-proxy instellen (Orbot-app voor Android)</string>
   <string name="id_connecting_to_peers">Connecting to peers...</string>
   <string name="id_connecting_to_tor_onion_nodes">Door te verbinden met Tor (.onion) nodes, verzeker je jezelf van maximale privacy en veiligheid. Druk op "OK" om door te gaan.</string>
@@ -103,6 +111,7 @@
   <string name="id_copy_raw_transaction">Copy raw transaction</string>
   <string name="id_copy_to_clipboard">Naar klembord kopiëren</string>
   <string name="id_copy_transaction_id">Copy transaction ID</string>
+  <string name="id_copy_unblinding_data">Copy unblinding data</string>
   <string name="id_copy_uri">Copy URI</string>
   <string name="id_copy_xpub">Copy xpub</string>
   <string name="id_create">Aanmaken</string>
@@ -148,6 +157,7 @@
   <string name="id_email_address">E-mailadres</string>
   <string name="id_enable">Inschakelen</string>
   <string name="id_enable_custom_networks_debug">Aangepaste opties voor netwerk-debugging inschakelen</string>
+  <string name="id_enable_email_notifications_to">Enable email notifications to change nlocktime</string>
   <string name="id_enable_face_id">Face ID inschakelen</string>
   <string name="id_enable_or_change_your_pin_to">Enable or change your PIN to quickly access your wallet</string>
   <string name="id_enable_spv">SPV inschakelen</string>
@@ -180,6 +190,7 @@
   <string name="id_error_passphrases_do_not_match">Fout: passphrase is niet hetzelfde</string>
   <string name="id_estimated_blocks_until">Geschatte blocks tot bevestiging: %d</string>
   <string name="id_example_89014283334011612858333">Voorbeeld: 8.90.14.2:8333,40.116.12.85:8333</string>
+  <string name="id_export_transactions_to_csv_file">Export transactions to CSV file</string>
   <string name="id_face_id">Face ID</string>
   <string name="id_fast">Snel</string>
   <string name="id_fee">Tarief</string>
@@ -191,9 +202,9 @@
   <string name="id_fee_rate_s">Tarief: %s</string>
   <string name="id_fee_s__s">Tarief: %s / %s</string>
   <string name="id_fees_are_too_low">Fees are too low</string>
+  <string name="id_for_investors">Voor investeerders</string>
   <string name="id_for_long_term_storage">For long term storage</string>
   <string name="id_for_most_users">For most users</string>
-  <string name="id_for_securities_investors">For securities investors</string>
   <string name="id_from">VAN</string>
   <string name="id_funds_received_in_this">Funds received in this transaction are not confidential.</string>
   <string name="id_general">General</string>
@@ -205,6 +216,7 @@
   <string name="id_google_auth">Google Auth</string>
   <string name="id_google_authenticator">Google Authenticator</string>
   <string name="id_google_authenticator_qr_code">Google Authenticator QR-code:</string>
+  <string name="id_google_authenticator_secret_key">Google Authenticator secret key</string>
   <string name="id_green_is_a_noncustodial_wallet">In de Green-wallet beheer je je eigen bezittingen</string>
   <string name="id_green_logo">Logo Green</string>
   <string name="id_green_mnemonic_qr_code">QR-code woordenlijst Green</string>
@@ -262,9 +274,6 @@
   <string name="id_ledger_supports_a_limited_set">Ledger supports a limited set of assets: tap here to check the list.</string>
   <string name="id_lets_get_you_set_up">We gaan alles instellen.</string>
   <string name="id_liquid_securities">Liquid Securities</string>
-  <string name="id_liquid_securities_account">Liquid Securities Account</string>
-  <string name="id_liquid_securities_account_is">Liquid securities account is only available on Liquid.</string>
-  <string name="id_liquid_securities_accounts_are">Liquid securities accounts are only available on Liquid wallets. You will be required to get authorization from the issuer to receive a Liquid Security.</string>
   <string name="id_loading_transactions">Transacties laden…</string>
   <string name="id_log_in">Aanmelden</string>
   <string name="id_log_in_into_your_s_wallet">Log in into your %s wallet</string>
@@ -280,6 +289,9 @@
   <string name="id_main_account">Hoofdaccount</string>
   <string name="id_make_sure_you_made_a_proper">Make sure you made a proper backup of your wallet mnemonic.</string>
   <string name="id_malleated">aangepast</string>
+  <string name="id_managed_assets">Managed Assets</string>
+  <string name="id_managed_assets_account">Account met beheerde assets</string>
+  <string name="id_managed_assets_accounts_are">Accounts met beheerde assets zijn alleen beschikbaar in Liquid-wallets. Je zal misschien je account-id moeten opgeven aan asset-uitgevers om je beheerde asset te ontvangen.</string>
   <string name="id_medium">Gemiddeld</string>
   <string name="id_memo">Memo</string>
   <string name="id_minute">min.</string>
@@ -316,6 +328,8 @@
   <string name="id_no_utxos_found">Geen UTXO\'s gevonden</string>
   <string name="id_nonconfidential_addresses_not">Non-confidential addresses not supported</string>
   <string name="id_normal">Normaal</string>
+  <string name="id_not_a_valid_email_address">Geen geldig e-mailadres</string>
+  <string name="id_not_a_valid_phone_number">Geen geldig telefoonnummer</string>
   <string name="id_not_connected_connecting_in_ds_">Niet verbonden. Verbinden in %ds …</string>
   <string name="id_notifications">Notificaties</string>
   <string name="id_now">Nu</string>
@@ -366,7 +380,7 @@
   <string name="id_previous_fee">Previous fee</string>
   <string name="id_privacy_policy">Privacybeleid</string>
   <string name="id_problem_with_key_1s">Probleem met sleutel %1$s</string>
-  <string name="id_provide_this_id_to_the_issuer">Provide this ID to the issuer to get authorization to receive a Liquid Security.</string>
+  <string name="id_provide_this_id_to_the_asset">Geef je id aan een asset-uitgever indien daarom wordt gevraagd.</string>
   <string name="id_proxy_settings">PROXYINSTELLINGEN</string>
   <string name="id_qr_scanner">QR-scanner</string>
   <string name="id_read_more_at_our_s">Read more at our %s</string>
@@ -375,6 +389,7 @@
   <string name="id_received">Ontvangen</string>
   <string name="id_received_on">Ontvangen op</string>
   <string name="id_recipient">Ontvanger</string>
+  <string name="id_recipient_address">Recipient address</string>
   <string name="id_recovery">Recovery</string>
   <string name="id_recovery_and_notifications">Herstel en notificaties</string>
   <string name="id_recovery_mnemonic">Recovery mnemonic</string>
@@ -388,7 +403,9 @@
   <string name="id_reference_exchange_rate">Standaard wisselkoers</string>
   <string name="id_refresh">Vernieuwen</string>
   <string name="id_remember_me">Remember me</string>
+  <string name="id_remove">Remove</string>
   <string name="id_remove_custom_network">Eigen netwerk verwijderen</string>
+  <string name="id_remove_wallet">Remove wallet</string>
   <string name="id_rename_account">Rename account</string>
   <string name="id_replaceable">vervangbaar</string>
   <string name="id_request_amount">VERZOCHTE BEDRAG</string>
@@ -406,12 +423,15 @@
   <string name="id_restore_temporary_wallet">Restore temporary wallet</string>
   <string name="id_review">Overzicht</string>
   <string name="id_review_account_information">Review account information</string>
+  <string name="id_review_output_s">Review output %s</string>
   <string name="id_s_blocks_left">%s blocks te gaan</string>
   <string name="id_s_from_s">%s van %s</string>
   <string name="id_s_network">%s netwerk</string>
   <string name="id_save">Opslaan</string>
+  <string name="id_save_a_summary_of_your_accounts">Save a summary of your accounts to speed up recovery in case you need to use our recovery tool.</string>
   <string name="id_save_your_mnemonic">Sla je woordenlijst op</string>
   <string name="id_scan_a_qr_code_for_spv_pairing">Scan een QR-code voor SPV-verbinding</string>
+  <string name="id_scan_qr_code">Scan QR code</string>
   <string name="id_scan_the_qr_code_in_google">Scan de QR-code in Google Authenticator:</string>
   <string name="id_scan_to_send_here">Scan to send here</string>
   <string name="id_screen_lock">Schermvergrendeling</string>
@@ -423,6 +443,7 @@
   <string name="id_see_our_terms_of_service_s">See our Terms of Service %s</string>
   <string name="id_select_a_fiat_currency_and">Select a fiat currency and bitcoin denomination to show amounts in your wallet</string>
   <string name="id_select_account">Selecteer account</string>
+  <string name="id_select_an_app_on_s">Select an app on %s</string>
   <string name="id_select_asset">Selecteer asset</string>
   <string name="id_select_duration_of_twofactor">Select duration of Two-Factor Authentication protection for your coins. The new option applies to newly received coins.</string>
   <string name="id_select_network">Netwerk selecteren</string>
@@ -443,6 +464,7 @@
   <string name="id_set_an_email_for_recovery">Set an email for recovery</string>
   <string name="id_set_custom_fee_rate">Aangepast transactietarief instellen</string>
   <string name="id_set_locktime">Set Locktime</string>
+  <string name="id_set_timelock">Set timelock</string>
   <string name="id_set_twofactor_threshold">Limiet tweetrapsauthenticatie instellen</string>
   <string name="id_set_up_a_passcode_for_your_ios">Set up a passcode for your iOS device to set a PIN for Blockstream Green</string>
   <string name="id_set_up_a_screen_lock_for_your">Set up a screen lock for your Android device to unlock your wallet using Android screen lock</string>
@@ -459,6 +481,7 @@
   <string name="id_setup_pin_and_s">PIN en %s instellen</string>
   <string name="id_share">Delen</string>
   <string name="id_share_address">Adres delen</string>
+  <string name="id_share_unblinding_data">Share unblinding data</string>
   <string name="id_show_bitcoin_amounts_in">Show bitcoin amounts in</string>
   <string name="id_show_coins_with_expiring">Show coins with expiring Two-Factor authentication protection.</string>
   <string name="id_show_fiat">Fiat tonen</string>
@@ -560,6 +583,7 @@
   <string name="id_user_not_found_or_invalid">Gebruiker niet gevonden of wachtwoord ongeldig</string>
   <string name="id_username">Gebruikersnaam</string>
   <string name="id_username_not_available">Gebruikersnaam niet beschikbaar</string>
+  <string name="id_value_must_be_between_144_and">Value must be between 144 and 200000</string>
   <string name="id_verify_your_pin">Controleer je PIN</string>
   <string name="id_version">Versie</string>
   <string name="id_version_1s">Versie: %1$s</string>
@@ -614,7 +638,7 @@
   <string name="id_your_transactions_will_be_shown">Je transacties verschijnen hier.</string>
   <string name="id_your_twofactor_threshold_is_s">Je limiet voor tweetrapsauthenticatie is %s.</string>
   <string name="id_your_wallet_backup_is_made_of">Your wallet backup is made of 24 words, also known as your mnemonic. Make sure you have a backup and keep it safe. Anyone who finds it can steal your money. You can use it to restore your Blockstream Green wallet on another device in case yours is lost, damaged or stolen.</string>
-  <string name="id_your_wallet_is_locked_for_a">Your wallet is locked for a Two-Factor Authentication reset. The reset will be completed in %s days.</string>
+  <string name="id_your_wallet_is_locked_for_a">Your wallet is locked for a Two-Factor Authentication reset. The reset will be completed in %d days.</string>
   <string name="id_your_wallet_is_not_yet_fully">Je wallet is nog niet volledig beveiligd.\nSchakel tweetrapsauthenticatie in.</string>
   <string name="id_your_watchonly_username_and">Your watch-only username and password will be stored un-encrypted on this device. If your device is compromised third parties can get access to your transaction history. Press "OK" to continue.</string>
 </resources>

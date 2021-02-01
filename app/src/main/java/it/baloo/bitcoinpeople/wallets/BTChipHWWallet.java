@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
+import static com.greenaddress.greenapi.data.InputOutputData.reverseBytes;
+
 
 public class BTChipHWWallet extends HWWallet {
     private static final byte SIGHASH_ALL = 1;
@@ -148,7 +150,7 @@ public class BTChipHWWallet extends HWWallet {
             if (sw && !mDongle.shouldUseNewSigningApi())
                 throw new RuntimeException("Segwit not supported");
 
-            final List<byte[]> swSigs = sw ? signSW(parent, tx, inputs, outputs) : new ArrayList<>();
+            final List<byte[]> swSigs = sw ? signSW(parent, tx, inputs, outputs, transactions) : new ArrayList<>();
             final List<byte[]> p2shSigs = p2sh ? signNonSW(parent, tx, inputs, outputs,
                                                            transactions) : new ArrayList<>();
 
@@ -183,21 +185,21 @@ public class BTChipHWWallet extends HWWallet {
             // TODO: refactor using map or something like that
             final List<String> assetCommitments = new ArrayList<>(outputs.size());
             final List<String> valueCommitments = new ArrayList<>(outputs.size());
-            final List<String> abfs = new ArrayList<>(outputs.size());
-            final List<String> vbfs = new ArrayList<>(outputs.size());
+            final List<String> amountBlinders = new ArrayList<>(outputs.size());
+            final List<String> assetBlinders = new ArrayList<>(outputs.size());
             for (int i = 0; i < outputs.size(); i++) {
                 if (resp.getAssetCommitments().get(i) == null) {
                     assetCommitments.add(null);
                     valueCommitments.add(null);
-                    abfs.add(null);
-                    vbfs.add(null);
+                    assetBlinders.add(null);
+                    amountBlinders.add(null);
                     continue;
                 }
 
                 assetCommitments.add(Wally.hex_from_bytes(resp.getAssetCommitments().get(i)));
                 valueCommitments.add(Wally.hex_from_bytes(resp.getValueCommitments().get(i)));
-                abfs.add(Wally.hex_from_bytes(resp.getAbfs().get(i)));
-                vbfs.add(Wally.hex_from_bytes(resp.getVbfs().get(i)));
+                assetBlinders.add(Wally.hex_from_bytes(reverseBytes(resp.getAssetBlinders().get(i))));
+                amountBlinders.add(Wally.hex_from_bytes(reverseBytes(resp.getAmountBlinders().get(i))));
             }
 
             final List<String> sigs = new ArrayList<>(inputs.size());
@@ -205,7 +207,7 @@ public class BTChipHWWallet extends HWWallet {
                 sigs.add(Wally.hex_from_bytes(sig));
             }
 
-            return new LiquidHWResult(sigs, assetCommitments, valueCommitments, abfs, vbfs);
+            return new LiquidHWResult(sigs, assetCommitments, valueCommitments, assetBlinders, amountBlinders);
         } catch (final BTChipException e) {
             e.printStackTrace();
             throw new RuntimeException("Signing Error: " + e.getMessage());
@@ -216,16 +218,16 @@ public class BTChipHWWallet extends HWWallet {
         private final List<byte[]> signatures;
         private final List<byte[]> assetCommitments;
         private final List<byte[]> valueCommitments;
-        private final List<byte[]> abfs;
-        private final List<byte[]> vbfs;
+        private final List<byte[]> assetBlinders;
+        private final List<byte[]> amountBlinders;
 
         public LiquidSigCommitment(List<byte[]> signatures, List<byte[]> assetCommitments,
-                                   List<byte[]> valueCommitments, List<byte[]> abfs, List<byte[]> vbfs) {
+                                   List<byte[]> valueCommitments, List<byte[]> assetBlinders, List<byte[]> amountBlinders) {
             this.signatures = signatures;
             this.assetCommitments = assetCommitments;
             this.valueCommitments = valueCommitments;
-            this.abfs = abfs;
-            this.vbfs = vbfs;
+            this.assetBlinders = assetBlinders;
+            this.amountBlinders = amountBlinders;
         }
 
         public List<byte[]> getSignatures() {
@@ -240,12 +242,12 @@ public class BTChipHWWallet extends HWWallet {
             return valueCommitments;
         }
 
-        public List<byte[]> getAbfs() {
-            return abfs;
+        public List<byte[]> getAssetBlinders() {
+            return assetBlinders;
         }
 
-        public List<byte[]> getVbfs() {
-            return vbfs;
+        public List<byte[]> getAmountBlinders() {
+            return amountBlinders;
         }
     }
 
@@ -271,19 +273,16 @@ public class BTChipHWWallet extends HWWallet {
         }
 
         List<Long> inputValues = new ArrayList<>();
-        List<byte[]> abfs = new ArrayList<>();
-        List<byte[]> vbfs = new ArrayList<>();
+        List<byte[]> assetBlindersBytes = new ArrayList<>();
+        List<byte[]> amountBlindersBytes = new ArrayList<>();
 
         for (InputOutputData in : inputs) {
             inputValues.add(in.getSatoshi());
-            abfs.add(in.getAbfBytes());
-            vbfs.add(in.getVbfBytes());
+            assetBlindersBytes.add(in.getAssetBlinderBytes());
+            amountBlindersBytes.add(in.getAmountBlinderBytes());
         }
 
-        List <BTChipDongle.BTChipLiquidTrustedCommitments> commitments = mDongle.getLiquidCommitments(inputValues, abfs,
-                                                                                                      vbfs,
-                                                                                                      inputs.size(),
-                                                                                                      outputs);
+        List <BTChipDongle.BTChipLiquidTrustedCommitments> commitments = mDongle.getLiquidCommitments(inputValues, assetBlindersBytes, amountBlindersBytes, inputs.size(), outputs);
 
         mDongle.finalizeLiquidInputFull(outputLiquidBytes(outputs, commitments));
         mDongle.provideLiquidIssuanceInformation(inputs.size());
@@ -322,24 +321,48 @@ public class BTChipHWWallet extends HWWallet {
             sigs.add(mDongle.untrustedLiquidHashSign(in.getUserPathAsInts(), locktime, SIGHASH_ALL));
         }
 
-        // remove the inputs from abfs/vbfs
+        // remove the inputs from assetBlinders/amountBlinders
         for (int i = 0; i < inputs.size(); i++) {
-            abfs.remove(0);
-            vbfs.remove(0);
+            assetBlindersBytes.remove(0);
+            amountBlindersBytes.remove(0);
         }
 
-        return new LiquidSigCommitment(sigs, assetCommitents, valueCommitents, abfs, vbfs);
+        return new LiquidSigCommitment(sigs, assetCommitents, valueCommitents, assetBlindersBytes, amountBlindersBytes);
+    }
+
+    // Helper to get the hw inputs
+    private BTChipDongle.BTChipInput[] getHwInputs(final List<InputOutputData> inputs,
+                                                   final Map<String, String> transactions,
+                                                   final boolean segwit) throws BTChipException {
+        final BTChipDongle.BTChipInput[] hwInputs = new BTChipDongle.BTChipInput[inputs.size()];
+        final boolean preferTrustedInputs = !segwit || mDongle.shouldUseTrustedInputForSegwit();
+
+        if (preferTrustedInputs && mDongle.supportScreen()) {
+            for (int i = 0; i < hwInputs.length; ++i) {
+                final InputOutputData in = inputs.get(i);
+                final String txHex = transactions.get(in.getTxhash());
+                if (txHex == null)
+                    throw new BTChipException(String.format("previous transaction %s not found", in.getTxhash()));
+
+                final ByteArrayInputStream is = new ByteArrayInputStream(Wally.hex_to_bytes(txHex));
+                hwInputs[i] = mDongle.getTrustedInput(new BitcoinTransaction(is), in.getPtIdx(),
+                                                      in.getSequence(), segwit);
+            }
+        } else {
+            for (int i = 0; i < hwInputs.length; ++i) {
+                final InputOutputData in = inputs.get(i);
+                hwInputs[i] = mDongle.createInput(inputBytes(in, segwit), sequenceBytes(in), false, segwit);
+            }
+        }
+
+        return hwInputs;
     }
 
     private List<byte[]> signSW(final GaActivity parent, final ObjectNode tx,
                                 final List<InputOutputData> inputs,
-                                final List<InputOutputData> outputs) throws BTChipException {
-        final BTChipDongle.BTChipInput[] hwInputs = new BTChipDongle.BTChipInput[inputs.size()];
-
-        for (int i = 0; i < hwInputs.length; ++i) {
-            final InputOutputData in = inputs.get(i);
-            hwInputs[i] = mDongle.createInput(inputBytes(in, true), sequenceBytes(in), false, true);
-        }
+                                final List<InputOutputData> outputs,
+                                final Map<String, String> transactions) throws BTChipException {
+        final BTChipDongle.BTChipInput[] hwInputs = getHwInputs(inputs, transactions, true);
 
         // Prepare the pseudo transaction
         // Provide the first script instead of a null script to initialize the P2SH confirmation logic
@@ -374,25 +397,7 @@ public class BTChipHWWallet extends HWWallet {
                                    final List<InputOutputData> inputs,
                                    final List<InputOutputData> outputs,
                                    final Map<String, String> transactions) throws BTChipException {
-
-        final BTChipDongle.BTChipInput[] hwInputs = new BTChipDongle.BTChipInput[inputs.size()];
-
-        if (!mDongle.supportScreen()) {
-            for (int i = 0; i < hwInputs.length; ++i) {
-                final InputOutputData in = inputs.get(i);
-                hwInputs[i] = mDongle.createInput(inputBytes(in, false), sequenceBytes(in), false, false);
-            }
-        } else {
-            for (int i = 0; i < hwInputs.length; ++i) {
-                final InputOutputData in = inputs.get(i);
-
-                final String txHex = transactions.get(in.getTxhash());
-                if (txHex == null)
-                    throw new BTChipException(String.format("previous transaction %s not found", in.getTxhash()));
-                final ByteArrayInputStream is = new ByteArrayInputStream(Wally.hex_to_bytes(txHex));
-                hwInputs[i] = mDongle.getTrustedInput(new BitcoinTransaction(is), in.getPtIdx(), in.getSequence());
-            }
-        }
+        final BTChipDongle.BTChipInput[] hwInputs = getHwInputs(inputs, transactions, false);
 
         final long locktime = tx.get("transaction_locktime").asLong();
         final long version = tx.get("transaction_version").asLong();

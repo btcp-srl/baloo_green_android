@@ -49,8 +49,10 @@
                 android:orientation="horizontal">
 
                 <ImageView
+                    android:id="@+id/accountViewIcon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:tint="#00FFFFFF"
                     android:src="@drawable/ic_btc"/>
 
                 <TextView
@@ -149,8 +151,7 @@
                     android:background="@android:color/transparent"
                     android:drawableStart="@drawable/ic_btcp_send"
                     android:textColor="@color/white"
-                    android:text="@string/id_send"
-                    app:tint="?attr/drawableSendReceiveIcColor"/>
+                    android:text="@string/id_send"/>
 
                 <Space
                     android:layout_width="wrap_content"
@@ -185,8 +186,7 @@
                     android:background="@android:color/transparent"
                     android:drawableStart="@drawable/ic_btcp_receive"
                     android:textColor="@color/white"
-                    android:text="@string/id_receive"
-                    app:tint="?attr/drawableSendReceiveIcColor"/>
+                    android:text="@string/id_receive"/>
 
                 <Space
                     android:layout_width="wrap_content"

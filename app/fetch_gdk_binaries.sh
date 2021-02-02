@@ -18,7 +18,7 @@ function check_command() {
 }
 check_command curl
 check_command gzip
-check_command sha256sum
+check_command shasum
 
 # Find out where we are being run from to get paths right
 OLD_PWD=$(pwd)
@@ -35,7 +35,7 @@ rm -rf gdk-android-jni* ${APP_ROOT}/src/main/jniLibs ${GDK_JAVA_DIR}
 
 # Fetch, validate and decompress gdk
 curl -sL -o ${TARBALL} "${URL}"
-echo "${SHA256}  ${TARBALL}" | sha256sum --check
+echo "${SHA256}  ${TARBALL}" | shasum -a 256 --check
 tar xvf ${TARBALL}
 rm ${TARBALL}
 

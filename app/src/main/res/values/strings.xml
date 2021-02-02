@@ -641,7 +641,7 @@
     <string name="id_your_wallet_is_locked_for_a">Your wallet is locked for a Two-Factor Authentication reset. The reset will be completed in %d days.</string>
     <string name="id_your_wallet_is_not_yet_fully">Your wallet is not yet fully secured.\nPlease enable Two-Factor authentication.</string>
     <string name="id_your_watchonly_username_and">Your watch-only username and password will be stored un-encrypted on this device. If your device is compromised third parties can get access to your transaction history. Press "OK" to continue.</string>
-    <string name="powered_by_greenaddress">Powered by Bitcoin People</string>
+    <string name="powered_by_greenaddress">Powered by GreenAddress</string>
     <string name="title_activity_links">LinksActivity</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>

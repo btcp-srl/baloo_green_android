@@ -1,45 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical">
-
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:text="Baloo Bitcoin Wallet"
-        android:paddingTop="16dp"
-        android:paddingBottom="8dp"
-        android:textColor="#000000"
-        android:textSize="24sp" />
+    android:layout_height="match_parent">
 
     <ImageView
-        android:layout_width="275dp"
-        android:layout_height="275dp"
+        android:id="@+id/linksBackground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:contentDescription="@string/id_green_logo"
-        android:layout_gravity="center"
-        android:src="@drawable/btcp_logo" />
+        android:scaleType="matrix"
+        android:alpha="0.15"
+        android:src="@drawable/ic_btcp_logo_vec" />
 
-    <TextView
-        android:layout_width="fill_parent"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fontFamily="sans-serif"
-        android:gravity="center"
-        android:text="@string/powered_by_greenaddress"
-        android:textColor="#000000"
-        android:textSize="16sp" />
+        android:layout_gravity="bottom">
 
-    <TextView
-        android:id="@+id/links_text"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:fontFamily="sans-serif"
-        android:paddingTop="32dp"
-        android:paddingStart="48dp"
-        android:textColor="#000000"
-        android:textSize="16sp"
-        />
+        <RelativeLayout
+            android:layout_width="0dip"
+            android:layout_height="fill_parent"
+            android:layout_weight="0.3">
+        </RelativeLayout>
 
-</LinearLayout>
+        <RelativeLayout
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.7"
+            android:layout_marginBottom="8dp"
+            android:layout_marginRight="8dp"
+            >
+
+            <TextView
+                android:id="@+id/links_text"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/linksSocial"
+                android:fontFamily="sans-serif"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout
+                android:id="@+id/linksSocial"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_above="@+id/linksBottomLogo"
+                android:layout_marginBottom="40dp">
+
+                <ImageView
+                    android:id="@+id/linksFacebookImg"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:clickable="true"
+                    android:src="@drawable/ic_facebook_logo"/>
+
+                <ImageView
+                    android:id="@+id/linksInstagramImg"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_marginLeft="16dp"
+                    android:clickable="true"
+                    android:scaleType="centerCrop"
+                    android:adjustViewBounds="true"
+                    android:src="@drawable/ic_instagram_logo"/>
+
+                <ImageView
+                    android:id="@+id/linksTelegramImg"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:layout_marginLeft="16dp"
+                    android:clickable="true"
+                    android:src="@drawable/ic_telegram_logo"/>
+
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/linksBottomLogo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:layout_alignParentBottom="true"
+                android:scaleType="fitEnd"
+                android:src="@drawable/ic_btcp_words_logo" />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

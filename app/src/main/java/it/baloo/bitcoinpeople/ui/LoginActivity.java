@@ -128,6 +128,10 @@ public abstract class LoginActivity extends GaActivity {
     }
 
     public void connect() throws Exception {
+        // BTCP debug testnet
+        // PreferenceManager.getDefaultSharedPreferences(this).edit().putString(PrefKeys.NETWORK_ID_ACTIVE, "testnet").commit();
+        // END btcp debug testnet
+
         final String network = PreferenceManager.getDefaultSharedPreferences(this).getString(
             PrefKeys.NETWORK_ID_ACTIVE, "mainnet");
         final SharedPreferences preferences = this.getSharedPreferences(network, MODE_PRIVATE);

@@ -4,10 +4,12 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -438,39 +440,15 @@ public abstract class UI {
         }
     }
 
+    public static void shareChooser(final Context context, final Uri uri) {
+        shareChooser(context, uri.toString());
+    }
 
-    public static void localeDecimalInput(final EditText editText) {
-        final DecimalFormat decFormat = (DecimalFormat) DecimalFormat.getInstance(Locale.getDefault());
-        final DecimalFormatSymbols symbols=decFormat.getDecimalFormatSymbols();
-        final String defaultSeparator = Character.toString(symbols.getDecimalSeparator());
-        final String otherSeparator = ".".equals(defaultSeparator) ? "," : ".";
-
-        editText.setHint(String.format("0%s00",defaultSeparator));
-
-        editText.addTextChangedListener(new TextWatcher() {
-            private boolean isEditing =false;
-            @Override
-            public void onTextChanged(final CharSequence s, final int start, final int before, final int count) {
-                Log.d(TAG,s + " " + start + " " + before + " " + count);
-            }
-
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if (isEditing)
-                    return;
-                isEditing = true;
-                final int index = editable.toString().indexOf(otherSeparator);
-                if (index > 0)
-                    editable.replace(index,index+1, defaultSeparator);
-
-                if (editable.toString().contains(".") || editable.toString().contains(","))
-                    editText.setKeyListener(DigitsKeyListener.getInstance("0123456789"));
-                else
-                    editText.setKeyListener(DigitsKeyListener.getInstance("0123456789.,"));
-
-                isEditing =false;
-            }
-        });
+    public static void shareChooser(final Context context, final String text) {
+        final Intent sendIntent = new Intent(Intent.ACTION_SEND);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, text);
+        sendIntent.setType("text/plain");
+        final Intent shareIntent = Intent.createChooser(sendIntent, null);
+        context.startActivity(shareIntent);
     }
 }

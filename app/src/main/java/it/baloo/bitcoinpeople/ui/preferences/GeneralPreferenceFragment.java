@@ -40,6 +40,7 @@ import it.baloo.bitcoinpeople.AuthenticationHandler;
 import it.baloo.bitcoinpeople.ui.BuildConfig;
 import it.baloo.bitcoinpeople.ui.R;
 import it.baloo.bitcoinpeople.ui.UI;
+import it.baloo.bitcoinpeople.ui.components.AmountTextWatcher;
 import it.baloo.bitcoinpeople.ui.onboarding.SecurityActivity;
 import it.baloo.bitcoinpeople.ui.twofactor.PopupCodeResolver;
 import it.baloo.bitcoinpeople.ui.twofactor.PopupMethodResolver;
@@ -155,7 +156,9 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
             }
             return false;
         });
-        setUnitSummary(Conversion.getBitcoinOrLiquidUnit());
+        try {
+            setUnitSummary(Conversion.getBitcoinOrLiquidUnit());
+        } catch (final Exception e) { }
 
         // Reference exchange rate
         mPriceSourcePref = find(PrefKeys.PRICING);
@@ -207,11 +210,21 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
             return false;
         });
 
+        // Two-Factor expiration period
+        final Preference twoFactorCsv = find(PrefKeys.TWO_FACTOR_CSV);
+        twoFactorCsv.setVisible(!isLiquid);
+        twoFactorCsv.setOnPreferenceClickListener(preference -> {
+            final Intent intent = new Intent(getActivity(), CSVTimeActivity.class);
+            startActivity(intent);
+            return false;
+        });
+
         // Set two-factor threshold
         mLimitsPref = find(PrefKeys.TWO_FAC_LIMITS);
         mLimitsPref.setOnPreferenceClickListener(this::onLimitsPreferenceClicked);
         mLimitsPref.setVisible(anyEnabled && !isLiquid);
-        setLimitsText(twoFaData.getLimits());
+        if (twoFaData != null)
+            setLimitsText(twoFaData.getLimits());
 
         // Enable nlocktime recovery emails
         mLocktimePref = find(PrefKeys.TWO_FAC_N_LOCKTIME_EMAILS);
@@ -258,11 +271,13 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
         });
 
         // Auto logout timeout
-        final int timeout = settings.getAltimeout();
         mTimeoutPref = find(PrefKeys.ALTIMEOUT);
         mTimeoutPref.setEntryValues(getResources().getStringArray(R.array.auto_logout_values));
         setTimeoutValues(mTimeoutPref);
-        setTimeoutSummary(timeout);
+        try {
+            final int timeout = settings.getAltimeout();
+            setTimeoutSummary(timeout);
+        } catch (final Exception e) {}
         mTimeoutPref.setOnPreferenceChangeListener((preference, newValue) -> {
             final Integer altimeout = Integer.parseInt(newValue.toString());
             settings.setAltimeout(altimeout);
@@ -308,7 +323,7 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
 
         // Privacy policy
         final Preference privacyPolicy = find(PrefKeys.PRIVACY_POLICY);
-        privacyPolicy.setOnPreferenceClickListener(preference -> openURI("https://www.bitcoinpeople.it/privacy"));
+        privacyPolicy.setOnPreferenceClickListener(preference -> openURI("https://www.bitcoinpeople.it/privacy-policy"));
 
         // Version
         final Preference version = find(PrefKeys.VERSION);
@@ -486,12 +501,12 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
         }
         final View v = UI.inflateDialog(getActivity(), R.layout.dialog_set_custom_feerate);
         final EditText rateEdit = UI.find(v, R.id.set_custom_feerate_amount);
-        UI.localeDecimalInput(rateEdit);
-
+        final AmountTextWatcher amountTextWatcher = new AmountTextWatcher(rateEdit);
         final Double aDouble = Double.valueOf(getDefaultFeeRate());
-
+        rateEdit.setHint(String.format("0%s00", amountTextWatcher.getDefaultSeparator()));
         rateEdit.setText(Conversion.getNumberFormat(2).format(aDouble));
         rateEdit.selectAll();
+        rateEdit.addTextChangedListener(amountTextWatcher);
 
         final MaterialDialog dialog;
         dialog = UI.popup(getActivity(), R.string.id_set_custom_fee_rate)
@@ -682,15 +697,22 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
         final View v = UI.inflateDialog(getActivity(), R.layout.dialog_set_limits);
         final Spinner unitSpinner = UI.find(v, R.id.set_limits_currency);
         final EditText amountEdit = UI.find(v, R.id.set_limits_amount);
-        UI.localeDecimalInput(amountEdit);
+
+        final AmountTextWatcher amountTextWatcher = new AmountTextWatcher(amountEdit);
+        amountEdit.setHint(String.format("0%s00", amountTextWatcher.getDefaultSeparator()));
+        amountEdit.addTextChangedListener(amountTextWatcher);
 
         final String[] currencies;
-        currencies = new String[] {Conversion.getBitcoinOrLiquidUnit(), Conversion.getFiatCurrency()};
-
-        final ArrayAdapter<String> adapter;
-        adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_item, currencies);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        unitSpinner.setAdapter(adapter);
+        try {
+            currencies = new String[]{Conversion.getBitcoinOrLiquidUnit(), Conversion.getFiatCurrency()};
+            final ArrayAdapter<String> adapter;
+            adapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_spinner_item, currencies);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            unitSpinner.setAdapter(adapter);
+        } catch (final Exception e) {
+            UI.toast(getActivity(), getString(R.string.id_operation_failure), Toast.LENGTH_SHORT);
+            return false;
+        }
 
         try {
             final ObjectNode limitsData = getSession().getTwoFactorConfig().getLimits();
@@ -699,11 +721,10 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
             amountEdit.selectAll();
             final BalanceData balance;
             balance = mObjectMapper.treeToValue(limitsData, BalanceData.class);
-            if (isFiat) {
-                amountEdit.setText(Conversion.getFiat(balance, false));
-            } else {
-                amountEdit.setText(Conversion.getBtc(balance, false));
-            }
+            amountEdit.removeTextChangedListener(amountTextWatcher);
+            amountEdit.setText(isFiat ? Conversion.getFiat(balance, false) :
+                        Conversion.getBtc(balance, false));
+            amountEdit.addTextChangedListener(amountTextWatcher);
         } catch (final Exception e) {
             Log.e(TAG, "Conversion error: " + e.getLocalizedMessage());
         }
@@ -757,13 +778,17 @@ public class GeneralPreferenceFragment extends GAPreferenceFragment {
 
     private void setSpendingLimits(final String unit, final String amount) {
         final Activity activity = getActivity();
-
-        final boolean isFiat = unit.equals(Conversion.getFiatCurrency());
-        final String amountStr = TextUtils.isEmpty(amount) ? "0" : amount;
-
         final ObjectNode limitsData = new ObjectMapper().createObjectNode();
-        limitsData.set("is_fiat", isFiat ? BooleanNode.TRUE : BooleanNode.FALSE);
-        limitsData.set(isFiat ? "fiat" : Conversion.getUnitKey(), new TextNode(amountStr));
+        try {
+            final boolean isFiat = unit.equals(Conversion.getFiatCurrency());
+            final String amountStr = TextUtils.isEmpty(amount) ? "0" : amount;
+            limitsData.set("is_fiat", isFiat ? BooleanNode.TRUE : BooleanNode.FALSE);
+            limitsData.set(isFiat ? "fiat" : Conversion.getUnitKey(), new TextNode(amountStr));
+        } catch (final Exception e) {
+            UI.toast(activity, getString(R.string.id_operation_failure), Toast.LENGTH_SHORT);
+            return;
+        }
+
         mUpdateDisposable = Observable.just(getSession())
                             .observeOn(Schedulers.computation())
                             .map((session) -> {

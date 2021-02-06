@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.greenaddress.greenapi.data.HWDeviceData;
 import com.greenaddress.greenapi.data.InputOutputData;
 import com.greenaddress.greenapi.data.NetworkData;
+import com.greenaddress.greenapi.data.SubaccountData;
 import it.baloo.bitcoinpeople.ui.GaActivity;
 
 import java.util.List;
@@ -13,6 +14,9 @@ import java.util.Map;
 public abstract class HWWallet {
     protected NetworkData mNetwork;
     protected HWDeviceData mHWDeviceData;
+
+    // For any explicit disconnection the hw may want to do
+    public abstract void disconnect();
 
     // Return the base58check encoded xpubs for each path in paths
     public abstract List<String> getXpubs(final GaActivity parent, final List<List<Integer>> paths);
@@ -30,15 +34,15 @@ public abstract class HWWallet {
         private final List<String> signatures;
         private final List<String> assetCommitments;
         private final List<String> valueCommitments;
-        private final List<String> abfs;
-        private final List<String> vbfs;
+        private final List<String> assetBlinders;
+        private final List<String> amountBlinders;
 
-        public LiquidHWResult(List<String> signatures, List<String> assetCommitments, List<String> valueCommitments, List<String> abfs, List<String> vbfs) {
+        public LiquidHWResult(List<String> signatures, List<String> assetCommitments, List<String> valueCommitments, List<String> assetBlinders, List<String> amountBlinders) {
             this.signatures = signatures;
             this.assetCommitments = assetCommitments;
             this.valueCommitments = valueCommitments;
-            this.abfs = abfs;
-            this.vbfs = vbfs;
+            this.assetBlinders = assetBlinders;
+            this.amountBlinders = amountBlinders;
         }
 
         public List<String> getSignatures() {
@@ -53,12 +57,12 @@ public abstract class HWWallet {
             return valueCommitments;
         }
 
-        public List<String> getAbfs() {
-            return abfs;
+        public List<String> getAssetBlinders() {
+            return assetBlinders;
         }
 
-        public List<String> getVbfs() {
-            return vbfs;
+        public List<String> getAmountBlinders() {
+            return amountBlinders;
         }
     }
 
@@ -74,7 +78,7 @@ public abstract class HWWallet {
 
     public abstract int getIconResourceId();
 
-    public abstract String getGreenAddress(final boolean csv, final long subaccount, final long branch, final long pointer, final long csvBlocks) throws BTChipException;
+    public abstract String getGreenAddress(final SubaccountData subaccount, final long branch, final long pointer, final long csvBlocks) throws Exception;
 
     public NetworkData getNetwork() {
         return mNetwork;

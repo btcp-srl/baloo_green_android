@@ -26,6 +26,7 @@ import android.view.MenuItem;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
@@ -33,7 +34,6 @@ import androidx.core.content.ContextCompat;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
 import com.google.zxing.PlanarYUVLuminanceSource;
@@ -73,7 +73,7 @@ import static com.greenaddress.greenapi.Session.getSession;
 import static it.baloo.bitcoinpeople.ui.TabbedMainActivity.REQUEST_BITCOIN_URL_SEND;
 
 public class ScanActivity extends LoggedActivity implements TextureView.SurfaceTextureListener, View.OnClickListener,
-    TextWatcher {
+                                  TextWatcher {
 
     private static final long AUTO_FOCUS_INTERVAL_MS = 2500L;
 
@@ -83,7 +83,7 @@ public class ScanActivity extends LoggedActivity implements TextureView.SurfaceT
     private View contentView;
     private de.schildbach.wallet.ui.scan.ScannerView scannerView;
     private TextureView previewView;
-    private TextInputEditText mAddressEditText;
+    private EditText mAddressEditText;
     private Disposable disposable;
 
     private volatile boolean surfaceCreated = false;
@@ -99,7 +99,6 @@ public class ScanActivity extends LoggedActivity implements TextureView.SurfaceT
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        UI.preventScreenshots(this);
 
         getSupportActionBar().setElevation(0);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -293,7 +292,13 @@ public class ScanActivity extends LoggedActivity implements TextureView.SurfaceT
                 cameraHandler.post(fetchAndDecodeRunnable);
             } catch (final Exception x) {
                 log.info("problem opening camera", x);
-                runOnUiThread(() -> showDialog(DIALOG_CAMERA_PROBLEM));
+                runOnUiThread(() -> {
+                    try {
+                        showDialog(DIALOG_CAMERA_PROBLEM);
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
+                });
             }
         }
 
@@ -438,6 +443,8 @@ public class ScanActivity extends LoggedActivity implements TextureView.SurfaceT
                      .map((session) -> {
             final GDKTwoFactorCall call = getSession().createTransactionFromUri(null, scanned, subaccount);
             final ObjectNode transactionRaw = call.resolve(null, new HardwareCodeResolver(this));
+            if (!transactionRaw.has("addressees"))
+                throw new Exception("Missing field addressees");
             final String error = transactionRaw.get("error").asText();
             if (!error.isEmpty() && !"id_invalid_amount".equals(error))
                 throw new Exception(error);
@@ -446,12 +453,8 @@ public class ScanActivity extends LoggedActivity implements TextureView.SurfaceT
                      .observeOn(AndroidSchedulers.mainThread())
                      .subscribe((transactionRaw) -> {
             removeUtxosIfTooBig(transactionRaw);
-            boolean skip_assets = false;
-            if (networkData.getLiquid() && transactionRaw.get("addressees_have_assets") != null &&
-                transactionRaw.get("addressees_have_assets").asBoolean(false)) {
-                skip_assets = true;
-            }
-            if (networkData.getLiquid() && !skip_assets)
+            final boolean showAssets = !transactionRaw.get("addressees").get(0).has("asset_tag");
+            if (networkData.getLiquid() && showAssets)
                 result.setClass(this, AssetsSelectActivity.class);
             else
                 result.setClass(this, SendAmountActivity.class);

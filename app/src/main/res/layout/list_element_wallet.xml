@@ -49,8 +49,10 @@
                 android:orientation="horizontal">
 
                 <ImageView
+                    android:id="@+id/accountViewIcon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:tint="#00FFFFFF"
                     android:src="@drawable/ic_btc"/>
 
                 <TextView
@@ -223,6 +225,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:src="@drawable/ic_add_wallet_1"
+            app:tint="@color/accent"
             />
 
         <Space

@@ -222,7 +222,8 @@ public abstract class LoggedActivity extends GaActivity {
     }
 
     private int delayLogoutTimer() {
-        if (getSession() != null && getSession().getSettings() != null) {
+        if (getSession() != null && getSession().getSettings() != null
+                && getSession().getSettings().getAltimeout() != null) {
             return getSession().getSettings().getAltimeout()  * 60 * 1000;
         }
         final String altimeString = cfg().getString(PrefKeys.ALTIMEOUT, "5");
@@ -248,20 +249,20 @@ public abstract class LoggedActivity extends GaActivity {
         }
     }
 
-    protected String getBitcoinUnitClean() {
+    protected String getBitcoinUnitClean() throws Exception {
         return Conversion.getUnitKey();
     }
 
     // for btc and fiat
     protected void setAmountText(final EditText amountText, final boolean isFiat,
-                                 final ObjectNode currentAmount) throws ParseException {
+                                 final ObjectNode currentAmount) throws Exception {
         final NumberFormat btcNf = Conversion.getNumberFormat();
         setAmountText(amountText, isFiat, currentAmount, btcNf, "btc");
     }
 
     // for liquid assets and l-btc
     protected void setAmountText(final EditText amountText, final boolean isFiat, final ObjectNode currentAmount,
-                                 final String asset) throws ParseException {
+                                 final String asset) throws Exception {
 
         NumberFormat nf = Conversion.getNumberFormat();
         if (!"btc".equals(asset) && asset != null) {
@@ -274,7 +275,7 @@ public abstract class LoggedActivity extends GaActivity {
     }
 
     protected void setAmountText(final EditText amountText, final boolean isFiat, final ObjectNode currentAmount,
-                                 final NumberFormat btcOrAssetNf, final String asset) throws ParseException {
+                                 final NumberFormat btcOrAssetNf, final String asset) throws Exception {
         final NumberFormat us = Conversion.getNumberFormat(8, Locale.US);
         final NumberFormat fiatNf = Conversion.getNumberFormat(2);
         final String fiat = fiatNf.format(us.parse(currentAmount.get("fiat").asText()));

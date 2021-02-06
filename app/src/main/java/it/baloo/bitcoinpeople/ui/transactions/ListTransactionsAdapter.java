@@ -90,6 +90,7 @@ public class ListTransactionsAdapter extends
         final TransactionData txItem = mTxItems.get(position);
 
         // Remove to display fee as amount in liquid
+        Log.d("satoshi", txItem.getSatoshi().toString());
         final Long btc = txItem.getSatoshi().get("btc");
         final Long fee = txItem.getFee();
         if (btc != null && btc.equals(fee) && txItem.getSatoshi().size() > 1) {
@@ -169,13 +170,15 @@ public class ListTransactionsAdapter extends
         holder.listNumberConfirmation.setText(confirmations);
         holder.listNumberConfirmation.setTextColor(getColor(confirmationsColor));
 
-        final int amountColor;
+        final int amountColor, iconColor;
         final int sentOrReceive;
         if (txItem.getTxType() == TYPE.IN) {
             amountColor = mNetworkData.getLiquid() ? color.liquidDark : color.green;
+            iconColor = amountColor;
             sentOrReceive= drawable.ic_received;
         } else {
             amountColor = color.green;
+            iconColor = color.grey_light;
             sentOrReceive= drawable.ic_sent;
         }
         if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
@@ -184,6 +187,7 @@ public class ListTransactionsAdapter extends
         } else {
             holder.sentOrReceive.setImageDrawable(mActivity.getResources().getDrawable(sentOrReceive));
         }
+        holder.sentOrReceive.setColorFilter(getColor(iconColor));
         holder.textValue.setTextColor(getColor(amountColor));
         holder.mainLayout.setOnClickListener(v -> {
             if (mOnTxSelected != null)

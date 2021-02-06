@@ -36,6 +36,7 @@ import com.greenaddress.gdk.GDKTwoFactorCall;
 import com.greenaddress.greenapi.HWWallet;
 import com.greenaddress.greenapi.data.HWDeviceData;
 import com.greenaddress.greenapi.data.HWDeviceData.HWDeviceDataLiquidSupport;
+import com.greenaddress.greenapi.data.HWDeviceDetailData;
 import com.greenaddress.greenapi.data.SubaccountData;
 import com.greenaddress.greenapi.model.Conversion;
 import it.baloo.bitcoinpeople.QrBitmap;
@@ -47,6 +48,7 @@ import it.baloo.bitcoinpeople.ui.R.layout;
 import it.baloo.bitcoinpeople.ui.R.string;
 import it.baloo.bitcoinpeople.ui.UI;
 import it.baloo.bitcoinpeople.ui.accounts.SubaccountPopup;
+import it.baloo.bitcoinpeople.ui.components.AmountTextWatcher;
 import it.baloo.bitcoinpeople.wallets.HardwareCodeResolver;
 
 import java.text.NumberFormat;
@@ -75,20 +77,23 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
     private SubaccountData mSubaccountData;
     private boolean isGenerationOnProgress = false;
     private Disposable generateDisposte, validateDisposte;
+    private AmountTextWatcher mAmountTextWatcher;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(layout.activity_receive);
-        UI.preventScreenshots(this);
         setTitleBackTransparent();
 
         mAddressImage = UI.find(this, id.receiveQrImageView);
         mAddressText = UI.find(this, id.receiveAddressText);
-        mAmountText = UI.find(this, id.amountEditText);
-        UI.localeDecimalInput(mAmountText);
         mUnitButton = UI.find(this, id.unitButton);
+
+        mAmountText = UI.find(this, id.amountEditText);
+        mAmountTextWatcher = new AmountTextWatcher(mAmountText);
+        mAmountText.setHint(String.format("0%s00", mAmountTextWatcher.getDefaultSeparator()));
+        mAmountText.addTextChangedListener(mAmountTextWatcher);
 
         mUnitButton.setOnClickListener((final View v) -> {
             onCurrencyClick();
@@ -102,6 +107,7 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
             final String subaccount = getIntent().getStringExtra("SUBACCOUNT");
             mSubaccountData = mObjectMapper.readValue(subaccount, SubaccountData.class);
         } catch (final Exception e) {
+            Toast.makeText(this, string.id_operation_failure, Toast.LENGTH_LONG).show();
             finishOnUiThread();
             return;
         }
@@ -111,8 +117,14 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
         final TextView receivingIdValue = UI.find(this, id.receivingIdValue);
 
         // Show information only for authorized accounts
-        if (mSubaccountData.getType().equals(ACCOUNT_TYPES[AUTHORIZED_ACCOUNT])) {
+        if (mSubaccountData != null && mSubaccountData.getType() != null &&
+            mSubaccountData.getType().equals(ACCOUNT_TYPES[AUTHORIZED_ACCOUNT])) {
             final String receivingID = mSubaccountData.getReceivingId();
+            if (receivingID == null || receivingID.isEmpty()) {
+                Toast.makeText(this, string.id_operation_failure, Toast.LENGTH_LONG).show();
+                finishOnUiThread();
+                return;
+            }
             receivingIdValue.setText(receivingID);
             receivingIdValue.setOnClickListener(
                 v -> onCopyClicked("auth_code", receivingID, string.id_address_copied_to_clipboard));
@@ -123,7 +135,7 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
             UI.find(this, id.receivingIdTitle).setOnClickListener(v -> {
                 final SubaccountPopup s = SubaccountPopup.getInstance(getString(string.id_account_id),
                                                                       getString(
-                                                                          string.id_provide_this_id_to_the_issuer));
+                                                                          string.id_provide_this_id_to_the_asset));
                 final FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
                 ft.addToBackStack(null);
                 s.show(ft, "dialog");
@@ -167,10 +179,12 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
         if (isFinishing())
             return;
 
-        mAmountText.addTextChangedListener(this);
-        mUnitButton.setText(mIsFiat ? Conversion.getFiatCurrency() : Conversion.getBitcoinOrLiquidUnit());
-        mUnitButton.setPressed(!mIsFiat);
-        mUnitButton.setSelected(!mIsFiat);
+        try {
+            mAmountText.addTextChangedListener(this);
+            mUnitButton.setText(mIsFiat ? Conversion.getFiatCurrency() : Conversion.getBitcoinOrLiquidUnit());
+            mUnitButton.setPressed(!mIsFiat);
+            mUnitButton.setSelected(!mIsFiat);
+        } catch (final Exception e) {}
     }
 
     @Override
@@ -178,7 +192,6 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
         // Inflate the menu; this adds items to the action bar if it is present.
         final int id = R.menu.receive_menu;
         getMenuInflater().inflate(id, menu);
-        menu.findItem(R.id.action_generate_new).setIcon(drawable.ic_refresh);
         return true;
     }
 
@@ -245,9 +258,7 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
         })
                            .observeOn(AndroidSchedulers.mainThread())
                            .subscribe((res) -> {
-            final String address = res.get("address").asText();
-            final Long pointer = res.get("pointer").asLong(0);
-            mCurrentAddress = address;
+            mCurrentAddress = res.get("address").asText();
             try {
                 updateAddressText();
                 updateQR();
@@ -255,35 +266,51 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
                 Log.e(TAG, "Conversion error: " + e.getLocalizedMessage());
             }
 
-            // Validate address only for ledger liquid HW
-            if (!getSession().getNetworkData().getLiquid() || getSession().getHWWallet() == null) {
-                isGenerationOnProgress = false;
-                return;
+            // Optionally validate address on hardware (on Jade, and ledger [on liquid])
+            boolean hwValidation = false;
+            if (getSession().getHWWallet() != null) {
+                final HWDeviceDetailData hwDevice = getSession().getHWWallet().getHWDeviceData().getDevice();
+                if (hwDevice.getSupportsLiquid() != HWDeviceDataLiquidSupport.None) {
+                    final String hwDeviceName = hwDevice.getName();
+                    if ("Jade".equals(hwDeviceName) ||
+                        ("Ledger".equals(hwDeviceName) && getNetwork().getLiquid())) {
+                        hwValidation = true;
+                    }
+                }
             }
-            validateAddress(address, pointer);
+
+            if (hwValidation) {
+                // Await hardware address validation
+                validateAddress(res);
+            } else {
+                // Address generation complete
+                isGenerationOnProgress = false;
+            }
         }, (final Throwable e) -> {
             UI.toast(this, string.id_operation_failure, Toast.LENGTH_LONG);
             isGenerationOnProgress = false;
         });
     }
 
-    private void validateAddress(final String address, final long pointer) {
-        boolean isLedger = false;
-        if (getSession().getHWWallet() != null) {
-            final String hwDeviceName = getSession().getHWWallet().getHWDeviceData().getDevice().getName();
-            isLedger = "Ledger".equals(hwDeviceName);
-        }
-        if (!getNetwork().getLiquid() || !isLedger)
-            return;
+    // Get address for the given path from the hardware, and compare to that in hand.
+    // Note: the user may have a chance to reject the address from the hardware device.
+    private void validateAddress(final JsonNode addressData) {
+        final String address = addressData.get("address").asText();
 
-        validateDisposte = Observable.just(getSession())
+        final long branch = addressData.get("branch").asLong(0);
+        final long pointer = addressData.get("pointer").asLong(0);
+
+        final boolean csv = mSubaccountData.getType() != null &&
+                            !mSubaccountData.getType().equals(ACCOUNT_TYPES[AUTHORIZED_ACCOUNT]);
+        final long csvBlocks = csv ? addressData.get("subtype").asLong(0) : 0;
+
+        validateDisposte = Observable.just(getSession().getHWWallet())
                            .subscribeOn(Schedulers.computation())
                            .timeout(30, TimeUnit.SECONDS)
-                           .map((session) -> {
-            return generateHW(pointer);
-        })
+                           .map(hwWallet -> hwWallet.getGreenAddress(mSubaccountData, branch, pointer, csvBlocks))
                            .observeOn(AndroidSchedulers.mainThread())
                            .subscribe((addressHW) -> {
+            Log.d(TAG, "HWWallet address: " + address);
             if (addressHW == null)
                 throw new Exception();
             else if (addressHW.equals(address))
@@ -297,28 +324,16 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
         });
     }
 
-    private String generateHW(final long pointer) throws Exception {
-        final HWWallet hwWallet = getSession().getHWWallet();
-        final HWDeviceData hwDeviceData = hwWallet.getHWDeviceData();
-        if (hwDeviceData != null &&
-            hwDeviceData.getDevice().getSupportsLiquid() != HWDeviceDataLiquidSupport.None) {
-            final boolean csv = !mSubaccountData.getType().equals(ACCOUNT_TYPES[AUTHORIZED_ACCOUNT]);
-            final String address = hwWallet.getGreenAddress(csv, mSubaccountData.getPointer(), 1L, pointer, 65535L);
-            Log.d(TAG, "HWWallet address: " + address);
-            return address;
-        }
-        return null;
-    }
-
     @Override
     public void beforeTextChanged(final CharSequence s, final int start, final int count, final int after) {}
 
     @Override
     public void onTextChanged(final CharSequence s, final int start, final int before, final int count) {
-        final String key = mIsFiat ? "fiat" : getBitcoinUnitClean();
         try {
-            final NumberFormat us = Conversion.getNumberFormat(8, Locale.US);
-            final Number number = us.parse(mAmountText.getText().toString());
+            final String key = mIsFiat ? "fiat" : getBitcoinUnitClean();
+            final NumberFormat us = Conversion.getNumberFormat(8);
+            final String numberText = mAmountText.getText().toString();
+            final Number number = us.parse(numberText.isEmpty() ? "0" : numberText);
             final String value = String.valueOf(number);
             final ObjectMapper mapper = new ObjectMapper();
             final ObjectNode amount = mapper.createObjectNode();
@@ -338,22 +353,26 @@ public class ReceiveActivity extends LoggedActivity implements TextWatcher {
     public void afterTextChanged(final Editable s) {}
 
     public void onCurrencyClick() {
-        if (mCurrentAmount == null)
-            return;
 
-        try {
-            mIsFiat = !mIsFiat;
-            setAmountText(mAmountText, mIsFiat, mCurrentAmount);
-        } catch (final ParseException e) {
-            mIsFiat = !mIsFiat;
-            UI.popup(this, R.string.id_your_favourite_exchange_rate_is).show();
-            return;
+        mIsFiat = !mIsFiat;
+        if (mCurrentAmount != null) {
+            try {
+                mAmountText.removeTextChangedListener(mAmountTextWatcher);
+                setAmountText(mAmountText, mIsFiat, mCurrentAmount);
+                mAmountText.addTextChangedListener(mAmountTextWatcher);
+            } catch(final Exception e) {
+                mIsFiat = !mIsFiat;
+                UI.popup(this, R.string.id_your_favourite_exchange_rate_is).show();
+                return;
+            }
         }
 
         // Toggle unit display and selected state
-        mUnitButton.setText(mIsFiat ? Conversion.getFiatCurrency() : Conversion.getBitcoinOrLiquidUnit());
-        mUnitButton.setPressed(!mIsFiat);
-        mUnitButton.setSelected(!mIsFiat);
+        try {
+            mUnitButton.setText(mIsFiat ? Conversion.getFiatCurrency() : Conversion.getBitcoinOrLiquidUnit());
+            mUnitButton.setPressed(!mIsFiat);
+            mUnitButton.setSelected(!mIsFiat);
+        } catch (final Exception e) {}
     }
 
     public void onShareClicked() {

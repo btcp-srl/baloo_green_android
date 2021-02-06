@@ -54,7 +54,7 @@ import static com.greenaddress.gdk.GDKSession.getErrorCode;
 import static com.greenaddress.greenapi.Session.getSession;
 
 public class MnemonicActivity extends LoginActivity implements View.OnClickListener,
-    View.OnKeyListener, TextView.OnEditorActionListener {
+                                      View.OnKeyListener, TextView.OnEditorActionListener {
 
     private static final String TAG = MnemonicActivity.class.getSimpleName();
     public static final String TEMPORARY_MODE = "TEMPORANY_MODE";
@@ -400,14 +400,6 @@ public class MnemonicActivity extends LoginActivity implements View.OnClickListe
             setMnemonic(item.getText().toString());
         }
         return super.onContextItemSelected(menuItem);
-    }
-
-    @Override
-    public boolean onPrepareOptionsMenu(final Menu menu) {
-        super.onPrepareOptionsMenu(menu);
-        final boolean haveCamera = getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY);
-        setMenuItemVisible(menu, R.id.action_add, haveCamera);
-        return true;
     }
 
     @Override
